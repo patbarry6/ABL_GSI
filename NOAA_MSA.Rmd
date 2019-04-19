@@ -108,13 +108,31 @@ From the [baseline file](#chinookbaseline) file I was able to adapt my script to
 
 It does take a hot second to convert a big file because it splits the concatenated genotypes and places them in separate columns and it loops over the columns. The more loci that are involved the more loops that need to occur. Fun stuff. We could make it faster with a foreach %dopar% loop, but we are likely not going to be using this script a ton. The ShinyApp should be using the formatted rubias files. 
 
-```{r Bayes2rubias}
+```{r Genepop2rubias}
 source("./functions/Genepop2rubias.R")
 Genepop2rubias_baseline(infile="./Data/ChinookBaseline.gen",outfile="./Data/ChinookBaselineRubias.csv",digits=2,ReportingGroupFile="./Data/ReportingGroups.csv")
 ```
 
 ### *Bayes2rubias*
-Chuck mentioned that he would love a Bayes to rubias script. That seems simple enough. I just need to contact him for a Bayes baseline and mixture file. 
+Chuck mentioned that he would love a Bayes to rubias script. It might be easier to make a Bayes to Genepop and just run the Genepop to Bayes script from above. 
+
+```{r Bayes2rubias, eval=FALSE}
+source("./functions/Bayes2Genepop.R")
+Bayes2Genepop_mixture(infile="2016_Akutan.MIX",outfile="2016_Aukutan.gen",LociFile="./Data/Loci.txt",digits=2,SampPrefix="Mix",Project=paste(infile,"Bayes2Genepop",sep=""))
+```
+I spent a little bit of time creating code that will read in the Bayes mixture file and convert it to a genepop formatted file. Why convert it to Genepop? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias. 
+
+The only snafu I ran into was that the original mixture file had only a single allele called for some individuals at locus 6. It doesn't appear to be a haploid locus, but it may be that ABL scores their insertions/deletions as single alleles? I sent Chuck an email to confirm.
+
+Here is what the funciton needs as input:
+
+  + infile *character* Name of mixture file. If it is located in a different folder give the entire          file path.  
+  + outfile *character* File path of the output file. If you want it to save somethwere else give it the     entire file path.
+  + LociFile *character* File path to a file with all the locus names. This should be a plain text file      with loci on individual lines.
+  + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
+  + project *character* This is the project name that will go at the top of your genepop file. It defaults   to the name of the input file and Bayes2Genepop
+  
+
 
 #References
 

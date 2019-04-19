@@ -287,7 +287,20 @@ Genepop2rubias_baseline(infile=&quot;./Data/ChinookBaseline.gen&quot;,outfile=&q
 </div>
 <div id="bayes2rubias" class="section level3">
 <h3><em>Bayes2rubias</em></h3>
-<p>Chuck mentioned that he would love a Bayes to rubias script. That seems simple enough. I just need to contact him for a Bayes baseline and mixture file.</p>
+<p>Chuck mentioned that he would love a Bayes to rubias script. It might be easier to make a Bayes to Genepop and just run the Genepop to Bayes script from above.</p>
+<pre class="r"><code>source(&quot;./functions/Bayes2Genepop.R&quot;)
+Bayes2Genepop_mixture(infile=&quot;2016_Akutan.MIX&quot;,outfile=&quot;2016_Aukutan.gen&quot;,LociFile=&quot;./Data/Loci.txt&quot;,digits=2,SampPrefix=&quot;Mix&quot;,Project=paste(infile,&quot;Bayes2Genepop&quot;,sep=&quot;&quot;))</code></pre>
+<p>I spent a little bit of time creating code that will read in the Bayes mixture file and convert it to a genepop formatted file. Why convert it to Genepop? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias.</p>
+<p>The only snafu I ran into was that the original mixture file had only a single allele called for some individuals at locus 6. It doesn’t appear to be a haploid locus, but it may be that ABL scores their insertions/deletions as single alleles? I sent Chuck an email to confirm.</p>
+<p>Here is what the funciton needs as input:</p>
+<ul>
+<li>infile <em>character</em> Name of mixture file. If it is located in a different folder give the entire file path.<br />
+</li>
+<li>outfile <em>character</em> File path of the output file. If you want it to save somethwere else give it the entire file path.</li>
+<li>LociFile <em>character</em> File path to a file with all the locus names. This should be a plain text file with loci on individual lines.</li>
+<li>digits <em>numeric</em> The number of digits used for the genepop file (can be 2 or 3).</li>
+<li>project <em>character</em> This is the project name that will go at the top of your genepop file. It defaults to the name of the input file and Bayes2Genepop</li>
+</ul>
 </div>
 </div>
 </div>
