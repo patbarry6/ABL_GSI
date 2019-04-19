@@ -4,7 +4,7 @@ library(plyr)
 
 Genepop2rubias_mixture<-function(infile,outfile,digits){
 
-dat<-readLines(inputfile)
+dat<-readLines(infile)
 PopIndex<-grep("pop|Pop|POP",dat) %>%
 {if(1%in%.) .[-1]} #Remove the first index if Pop is in the file description
 nloci<-PopIndex[1]-2
