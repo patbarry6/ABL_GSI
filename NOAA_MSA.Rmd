@@ -1,0 +1,123 @@
+---
+title: 'NOAA Chinook and Chum salmon mixed stock analysis'
+author: "Patrick Dylan Barry"
+date: "15 April 2019"
+output:
+  html_document:
+    df_print: paged
+bibliography: ./Bibliography/NOAA_MSA.bib
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  cache = TRUE
+)
+```
+
+```{r loadpackages_WorkingDirectory, include = FALSE}
+setwd("~/Desktop/NOAA_rubiasShiny")
+library("stringr")
+library("tidyverse")
+```
+
+#Introduction
+This project was stated to help with the NOAA Chinook and chum salmon Mixed Stock Analysis (MSA). At the NPRMC meeting on 14 April 2019, Jordan Watson and Chuck Guthrie mentioned they were transitioning from Bayes to rubias for MSA estimates. I have been working with both and have a few scripts that I thought might be pretty helpful to them. This notebook details the scripts that should help and troubleshoots any kind of issues that may be encountered when applying those scripts to other files. 
+
+# Conversion of the Baselines and Mixtures
+
+## Description of the Baseline file {#baseline}
+The big differnece between the Chinook and the Chum baseline and mixutre files is that the Chinook baseline uses SNP markers and the Chum salmon baseline uses microsatellite markers. It doesn't make much difference other than the fact that our scripts need to have the option to use either 2 or 3 digit genotypes in Genepop.
+
+### Chinook Salmon
+So I haven't played with the NOAA Chinook or chum salmon baseline or mixture files before so let's take a quick look at what they look like. What how many and what loci are we dealing with?
+
+```{r ChinookBaseline}
+dat<-readLines("./Data/ChinookBaseline.gen")
+PopIndex<-grep("pop|Pop|POP",dat) %>%
+  {if(1%in%.) .[-1]} #Remove the first index if Pop is in the file description
+nloci<-PopIndex[1]-2
+LociNames<-dat[2:(nloci+1)]
+LociNames
+
+Alleles<-dat[-PopIndex]%>%
+  .[-(1:(nloci+1))]%>%
+  str_split(.,",")%>%
+  lapply(.,`[[`,2)%>%
+  {str_trim(unlist(.))}
+
+Alleles[1]
+```
+So there are `r nloci` single nucleotide polymorphism (SNPs) in the Chinook salmon baseline. And all the SNPs are coded as two digit alleles. We know that there are `r length(PopIndex) ` *POP* designators in the baseline file, so we should have that many populations. What do the individual identifiers look like?
+
+```{r IndIdentify}
+Inds<-dat[-PopIndex]%>%
+  .[-(1:(nloci+1))]%>%
+  str_split(.,",")%>%
+  lapply(.,`[[`,1)%>%
+  {str_trim(unlist(.))}
+head(Inds,5)
+```
+It appears that each individual identifier is a population and individual concatenated with a period. It could be however that the it is the population, year of collection and individual identifier. What does the L mean?
+
+```{r PopNames}
+Pops<-dat[-PopIndex]%>%
+  .[-(1:(nloci+1))]%>%
+  str_split(.,",")%>%
+  lapply(.,`[[`,1)%>%
+  {str_trim(unlist(.))}%>%
+  str_split(.,"\\.")%>%
+  lapply(.,`[[`,1)%>%
+  unique()%>%
+  unlist()
+
+head(Pops,5)
+```
+
+So in the genepop file we have `r length(PopIndex)` *Pop* designators and `r length(Pops)` unique descriptors based on the individual identifiers. So it doesn't appear that the number is something we have to worry about. That is nice, but maybe we should ask Chuck Guthrie what the letters and numbers mean? Could be sub-collections in a river system.  
+
+So in summary, we have `r length(Inds)` individuals from `r length(PopIndex)` populations genotyped at  `r nloci` biallelic SNP loci. 
+
+There appears to be an issue. When I attempted to make a reporting group file I counted the number of populations in Guthrie III. ([@Guthrie2018]) there were 190 populations used in the baseline. So either they use different baselines or my file is incomplete! This is something Jordan and Chuck can resolve.
+
+### Chum Baseline file
+Jordan Watson suggested that the chum baseline file is really just an allele frequency file. So we will need to simulate a bunch of genotypes for it to work with *rubias*.  
+
+##Description of the Mixture file
+Each year the mixture file will be created from either the microsatellite or SNP data. So we should get a file like the one that is error checked after genotying. 
+
+### Chinook \& Chum salmon
+I assume it will be something like Mixure*Year*.1. This would mean that we don't really need to much work to the *Genepop2rubias_baseline()* function to make it work with a baseline file.
+
+
+
+## Conversion script 
+### *Genepop2rubias*
+So for my PhD I had a few Sockeye salmon that were huge outliers and I wanted to see if I could assign them to nearby populations using the ADF&G sockeye baseline. Luckily, I had used the SNPs for my study that they use in their baseline. So I had on hand some scripts that could easily be turned into functions for use by the NOAA folks. I made two functions *Genepop2rubias_baseline()* and *Genepop2rubias_mixture()*. I don't have one of their mixture files. My naming convention for my outliers will probably differ substantially from their naming convention so I will wait to troubleshoot the mixutre function. 
+From the [baseline file](#chinookbaseline) file I was able to adapt my script to read in a genepop file and spit out a .csv for use in rubias. Here is what the funciton needs as input:
+
+  + infile *character* Name of genepop input file. If it is located in a different folder give the entire       file path.  
+  + outfile *character* File path of the output file. If you want it to save somethwere else give it the        entire file path.
+  + ReportingGroupFile *character* File path to the reporting group file. This should be a csv with the         first column as the population label in the genepop file and the second column as the reporting group       used for the analysis
+  + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
+
+It does take a hot second to convert a big file because it splits the concatenated genotypes and places them in separate columns and it loops over the columns. The more loci that are involved the more loops that need to occur. Fun stuff. We could make it faster with a foreach %dopar% loop, but we are likely not going to be using this script a ton. The ShinyApp should be using the formatted rubias files. 
+
+```{r Bayes2rubias}
+source("./functions/Genepop2rubias.R")
+Genepop2rubias_baseline(infile="./Data/ChinookBaseline.gen",outfile="./Data/ChinookBaselineRubias.csv",digits=2,ReportingGroupFile="./Data/ReportingGroups.csv")
+```
+
+### *Bayes2rubias*
+Chuck mentioned that he would love a Bayes to rubias script. That seems simple enough. I just need to contact him for a Bayes baseline and mixture file. 
+
+#References
+
+
+
+
+
+
+
+
