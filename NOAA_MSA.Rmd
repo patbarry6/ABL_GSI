@@ -1,5 +1,10 @@
 ---
 title: 'NOAA Chinook and Chum salmon mixed stock analysis'
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 author: "Patrick Dylan Barry"
 date: "15 April 2019"
 output:
@@ -17,7 +22,6 @@ knitr::opts_chunk$set(
 ```
 
 ```{r loadpackages_WorkingDirectory, include = FALSE}
-setwd("~/Desktop/NOAA_rubiasShiny")
 library("stringr")
 library("tidyverse")
 ```
