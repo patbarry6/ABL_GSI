@@ -2,7 +2,7 @@
 library(tidyverse)
 library(plyr)
 
-Bayes2Genepop_mixture<-function(infile,outfile,LociFile,digits,SampPrefix="Mix",Project=paste(infile,"Bayes2Genepop",sep="")){
+Bayes2Genepop_mixture<-function(infile,outfile,LociFile,digits,SampPrefix="Mix",HapLoci=logical(length = 0),Project=paste(infile,"Bayes2Genepop",sep="")){
 
 if(file.exists(file.path(infile))){
   dat<-readLines(infile)
@@ -38,6 +38,12 @@ for (L in 1:nloci){
 
 dat2<-lapply(1:nrow(GenoMatAll),function(x) paste(formatC(as.numeric(GenoMatAll[x,seq(1,nloci*2,2)]),width=digits,flag="0"),formatC(as.numeric(GenoMatAll[x,seq(2,nloci*2+1,2)]),width=digits,flag="0"),sep=""))
 dat2<-matrix(unlist(dat2),ncol=nloci,nrow=nrow(GenoMatAll),byrow=T)
+
+if(length(HapLoci)>0){ #if we have some Haploid loci then lets format them correctly and move the to the end of the file
+  Haploci<-dat2[,HapLoci]
+  dat2<-dat2[,-HapLoci]
+  }
+
 dat2<-cbind(paste(SampPrefix,seq(1,nrow(GenoMat)),sep="."),",",dat2)
 
 write.table(Project,outfile,quote=F,row.names=F,col.names=F)

@@ -251,9 +251,69 @@ head(Inds,5)
 
 head(Pops,5)
 #&gt; [1] &quot;KBIST98L&quot;   &quot;KBOLS0298E&quot; &quot;KKAMC98L97&quot; &quot;KPAKH02&quot;    &quot;KPILG0506&quot;</code></pre>
-<p>So in the genepop file we have 172 <em>Pop</em> designators and 172 unique descriptors based on the individual identifiers. So it doesn’t appear that the number is something we have to worry about. That is nice, but maybe we should ask Chuck Guthrie what the letters and numbers mean? Could be sub-collections in a river system.</p>
-<p>So in summary, we have 23205 individuals from 172 populations genotyped at 43 biallelic SNP loci.</p>
-<p>There appears to be an issue. When I attempted to make a reporting group file I counted the number of populations in Guthrie III. (<span class="citation">(Guthrie III et al. 2018)</span>) there were 190 populations used in the baseline. So either they use different baselines or my file is incomplete! This is something Jordan and Chuck can resolve.</p>
+<p>In the genepop file we have 172 <em>Pop</em> designators and 172 unique descriptors based on the individual identifiers. It doesn’t appear that the number is something we have to worry about.</p>
+<p>In summary, we have 23205 individuals from 172 populations genotyped at 43 biallelic SNP loci.</p>
+<p>When converting the mixture file I found out that one of our markers is actually haploid! Locus #6 (C3N3) should be scored as haploid. Genepop accomodates both diploid and haploid data, so we need to do a little bit of editing of the baseline file that I was sent.</p>
+<pre class="r"><code>digits=2
+dat&lt;-readLines(&quot;./Data/ChinookBaseline.gen&quot;)
+  
+PopIndex&lt;-grep(&quot;pop|Pop|POP&quot;,dat) %&gt;%
+  {if(1%in%.) .[-1]} #Remove the first index if Pop is in the file description
+nloci&lt;-PopIndex[1]-2 # How many loci do we have?
+LociNames&lt;-dat[2:(nloci+1)] #What are the loci names?
+
+
+npops&lt;-length(PopIndex) #How many pops?
+dat&lt;-dat[-c(1:(nloci+1),PopIndex)] #Lets get just the geno data
+dat2&lt;-matrix(unlist(str_split(dat,&quot;,&quot;)),nrow=length(dat),ncol=2,byrow=T) #make the geno data a matrix
+nInd&lt;-nrow(dat2)
+
+#What are the names of the pops
+pops&lt;-dat%&gt;%
+  str_split(.,&quot;,&quot;)%&gt;%
+  lapply(.,`[[`,1)%&gt;%
+  {str_trim(unlist(.))}%&gt;%
+  str_split(.,&quot;\\.&quot;)%&gt;%
+  lapply(.,`[[`,1)%&gt;%
+  unique()%&gt;%
+  unlist()
+
+#Pull the pop designation for each individual. Should match rep(pops,each=popCounts)
+Indpops&lt;-dat%&gt;%
+  str_split(.,&quot;,&quot;)%&gt;%
+  lapply(.,`[[`,1)%&gt;%
+  {str_trim(unlist(.))}%&gt;%
+  str_split(.,&quot;\\.&quot;)%&gt;%
+  lapply(.,`[[`,1)%&gt;%
+  unlist()
+
+popCountIndex&lt;-lapply(1:npops,function(x) which(Indpops==pops[x])) #make an index for each population of individuals
+
+Genos&lt;-str_split(dat2[,2],pattern = &quot; &quot;) #split the character vector of genotype for each individual
+Genos&lt;-lapply(1:nrow(dat2), function(x) Genos[[x]][Genos[[x]]!=&quot;&quot;]) 
+GenoMat&lt;-matrix(data=unlist(Genos),nrow=nrow(dat2),ncol=nloci,byrow=T)
+HaploidLoci&lt;-GenoMat[,6]
+GenoMat&lt;-GenoMat[,-6]
+
+HaploidGeno&lt;-lapply(1:length(HaploidLoci), function(x) substring(HaploidLoci[x],seq(1,digits+1,digits),seq(digits,digits*2,digits))) #pull the haploid locus
+all(unlist(lapply(1:length(HaploidGeno),function(x) HaploidGeno[[x]][1]==HaploidGeno[[x]][2]))) #check to make sure that they are all coded correctly
+#&gt; [1] TRUE
+HaploGeno&lt;-lapply(HaploidGeno,`[[`,1) #pull the first allele as the haplotype
+GenoMat&lt;-cbind(GenoMat,HaploGeno) #move it to the end of the file
+LociNames&lt;-c(LociNames[-6],LociNames[6]) #fix the loci names!
+
+Genos&lt;-sapply(1:nrow(GenoMat),function(x) paste(dat2[x,1],&quot;,&quot;,paste(GenoMat[x,],collapse=&quot; &quot;),sep=&quot; &quot;)) #paste them all together in genepop format
+
+#write out each population in a loop
+NewFileName&lt;-&quot;./Data/ChinookBaseline_clean.gen&quot;
+write.table(file=NewFileName,x=&quot;Cleaned up BaselineFile&quot;,col.names=F,row.names=F,quote=F)
+    write.table(file=NewFileName,x=LociNames,append=T,col.names = F,row.names=F,quote=F)
+    for (p in 1:npops){
+      write.table(file=NewFileName,x=&quot;Pop&quot;,append=T,col.names = F,row.names=F,quote=F)
+      write.table(file=NewFileName,x=Genos[eval(parse(text=popCountIndex[p]))],append=T,col.names = F,row.names=F,quote=F)
+    }</code></pre>
+<p>Cool so it looks like we have taken the mtDNA locus, coded it correctly and moved it to the end of the file.</p>
+<p>We have a choice now. We can quickly recode the mixture file we were given so that we can work on the Genepop2rubias functions, or we can skip ahead and use Chucks input files and work on the Bayes2Rubias functions.</p>
 </div>
 <div id="chum-baseline-file" class="section level3">
 <h3>Chum Baseline file</h3>
@@ -285,9 +345,9 @@ head(Pops,5)
 Genepop2rubias_baseline(infile=&quot;./Data/ChinookBaseline.gen&quot;,outfile=&quot;./Data/ChinookBaselineRubias.csv&quot;,digits=2,ReportingGroupFile=&quot;./Data/ReportingGroups.csv&quot;)
 #&gt; File conversion successful.</code></pre>
 </div>
-<div id="bayes2rubias" class="section level3">
-<h3><em>Bayes2rubias</em></h3>
-<p>Chuck mentioned that he would love a Bayes to rubias script. It might be easier to make a Bayes to Genepop and just run the Genepop to Bayes script from above.</p>
+<div id="bayes2genepop" class="section level3">
+<h3><em>Bayes2Genepop</em></h3>
+<p>The Bayes baseline file consists of allele counts at each locus for all the populations. So we don’t have raw multilocus genotypes for each individual. We could take the Bayes baseline and simulate those genotypes, but that seems silly when we have the Genepop file to work with. We may have to simulate a Genepop baseline file for chum salmon but we will cross that bridge when we come to it.</p>
 <pre class="r"><code>source(&quot;./functions/Bayes2Genepop.R&quot;)
 Bayes2Genepop_mixture(infile=&quot;2016_Akutan.MIX&quot;,outfile=&quot;2016_Aukutan.gen&quot;,LociFile=&quot;./Data/Loci.txt&quot;,digits=2,SampPrefix=&quot;Mix&quot;,Project=paste(infile,&quot;Bayes2Genepop&quot;,sep=&quot;&quot;))</code></pre>
 <p>I spent a little bit of time creating code that will read in the Bayes mixture file and convert it to a genepop formatted file. Why convert it to Genepop? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias.</p>
@@ -304,13 +364,8 @@ Bayes2Genepop_mixture(infile=&quot;2016_Akutan.MIX&quot;,outfile=&quot;2016_Auku
 </div>
 </div>
 </div>
-<div id="references" class="section level1 unnumbered">
+<div id="references" class="section level1">
 <h1>References</h1>
-<div id="refs" class="references">
-<div id="ref-Guthrie2018">
-<p>Guthrie III, C.M., Hv.T. Nguyen, A.E. Thomson, Hauch K., and J.R. Guyon. 2018. “Genetic Stock Composition Analysis of the Chinook Salmon Bycatch Samples from the 2016 Gulf of Alaska Trawl Fisheries.” NOAA Technical Memorandum NMFS-AFSC-370. 17109 Pt. Lena Loop Rd. Juneau, Alaska 99801: National Oceanic; Atmospheric Administration.</p>
-</div>
-</div>
 </div>
 
 
