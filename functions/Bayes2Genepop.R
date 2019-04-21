@@ -20,6 +20,8 @@ nloci<-nrow(Loci)
 Genos<-lapply(1:length(dat), function(x) str_split(str_trim(dat[x]),"\\s+"))
 GenoMat<-matrix(data=unlist(Genos),nrow=length(dat),ncol=nloci,byrow=T)
 
+
+
 GenoMatAll<-matrix(data=NA,nrow=nrow(GenoMat),ncol=nloci*2)
 #each locus could have a different number of alleles (if uSat)
 #so we should loop over the loci to get each individuals genotype

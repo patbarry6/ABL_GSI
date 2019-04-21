@@ -159,22 +159,28 @@ Each year the mixture file will be created from either the microsatellite or SNP
 ### Chinook \& Chum salmon
 I assume it will be something like Mixure*Year*.1. This would mean that we don't really need to much work to the *Genepop2rubias_baseline()* function to make it work with a baseline file.
 
-
-
 ## Conversion script 
 ### *Genepop2rubias*
-So for my PhD I had a few Sockeye salmon that were huge outliers and I wanted to see if I could assign them to nearby populations using the ADF&G sockeye baseline. Luckily, I had used the SNPs for my study that they use in their baseline. So I had on hand some scripts that could easily be turned into functions for use by the NOAA folks. I made two functions *Genepop2rubias_baseline()* and *Genepop2rubias_mixture()*. I don't have one of their mixture files. My naming convention for my outliers will probably differ substantially from their naming convention so I will wait to troubleshoot the mixutre function. 
+So for my PhD I had a few Sockeye salmon that were huge outliers and I wanted to see if I could assign them to nearby populations using the ADF&G sockeye baseline. Luckily, I had used the SNPs for my study that they use in their baseline. So I had on hand some scripts that could easily be turned into functions for use by the NOAA folks. I made two functions *Genepop2rubias_baseline()* and *Genepop2rubias_mixture()*.
 From the [baseline file](#chinookbaseline) file I was able to adapt my script to read in a genepop file and spit out a .csv for use in rubias. Here is what the funciton needs as input:
 
+*Genepop2rubias_baseline()*
   + infile *character* Name of genepop input file. If it is located in a different folder give the entire       file path.  
   + outfile *character* File path of the output file. If you want it to save somethwere else give it the        entire file path.
   + ReportingGroupFile *character* File path to the reporting group file. This should be a csv with the         first column as the           population label in the genepop file and the second column as the reporting group       used for the analysis
+  + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
+
+*Genepop2rubias_mixture()*
+  + infile *character* Name of genepop input file. If it is located in a different folder give the entire file path.  
+  + outfile *character* File path of the output file. If you want it to save somethwere else give it the entire file path.
   + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
 
 It does take a hot second to convert a big file because it splits the concatenated genotypes and places them in separate columns and it loops over the columns. The more loci that are involved the more loops that need to occur. Fun stuff. We could make it faster with a foreach %dopar% loop, but we are likely not going to be using this script a ton. The ShinyApp should be using the formatted rubias files. 
 
 ```{r Genepop2rubias}
 source("./functions/Genepop2rubias.R")
+Genepop2rubias_mixture(infile="./Data/17AkutanMix.gen",outfile="./Data/17AkutanMix.csv",digits=2)
+
 Genepop2rubias_baseline(infile="./Data/ChinookBaseline.gen",outfile="./Data/ChinookBaselineRubias.csv",digits=2,ReportingGroupFile="./Data/ReportingGroups.csv")
 ```
 
@@ -185,17 +191,17 @@ The Bayes baseline file consists of allele counts at each locus for all the popu
 source("./functions/Bayes2Genepop.R")
 Bayes2Genepop_mixture(infile="2016_Akutan.MIX",outfile="2016_Aukutan.gen",LociFile="./Data/Loci.txt",digits=2,SampPrefix="Mix",Project=paste(infile,"Bayes2Genepop",sep=""))
 ```
-I spent a little bit of time creating code that will read in the Bayes mixture file and convert it to a genepop formatted file. Why convert it to Genepop? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias. 
+So to create the Genepop2rubias scripts I needed Genepop files. Chuck gave me two Bayes files, so I first had to create a genepop file from the Bayes file which made the mixture conversion function a snap to create. Why convert it to Genepop first? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias. 
 
-The only snafu I ran into was that the original mixture file had only a single allele called for some individuals at locus 6. It doesn't appear to be a haploid locus, but it may be that ABL scores their insertions/deletions as single alleles? I sent Chuck an email to confirm.
+The only snafu I ran into was that the original mixture file had only a single allele called for some individuals at locus 6. This actually was really good because I didn't know there was a haploid marker in the panel. 
 
 Here is what the funciton needs as input:
 
-  + infile *character* Name of mixture file. If it is located in a different folder give the entire          file path.  
-  + outfile *character* File path of the output file. If you want it to save somethwere else give it the     entire file path.
-  + LociFile *character* File path to a file with all the locus names. This should be a plain text file      with loci on individual lines.
+  + infile *character* Name of mixture file. If it is located in a different folder give the entire file path.  
+  + outfile *character* File path of the output file. If you want it to save somethwere else give it the entire file path.
+  + LociFile *character* File path to a file with all the locus names. This should be a plain text file with loci on individual lines.
   + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
-  + project *character* This is the project name that will go at the top of your genepop file. It defaults   to the name of the input file and Bayes2Genepop
+  + project *character* This is the project name that will go at the top of your genepop file. It defaults to the name of the input file and Bayes2Genepop
   
 
 

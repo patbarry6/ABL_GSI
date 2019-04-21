@@ -332,26 +332,26 @@ write.table(file=NewFileName,x=&quot;Cleaned up BaselineFile&quot;,col.names=F,r
 <h2>Conversion script</h2>
 <div id="genepop2rubias" class="section level3">
 <h3><em>Genepop2rubias</em></h3>
-<p>So for my PhD I had a few Sockeye salmon that were huge outliers and I wanted to see if I could assign them to nearby populations using the ADF&amp;G sockeye baseline. Luckily, I had used the SNPs for my study that they use in their baseline. So I had on hand some scripts that could easily be turned into functions for use by the NOAA folks. I made two functions <em>Genepop2rubias_baseline()</em> and <em>Genepop2rubias_mixture()</em>. I don’t have one of their mixture files. My naming convention for my outliers will probably differ substantially from their naming convention so I will wait to troubleshoot the mixutre function. From the <a href="#chinookbaseline">baseline file</a> file I was able to adapt my script to read in a genepop file and spit out a .csv for use in rubias. Here is what the funciton needs as input:</p>
-<ul>
-<li>infile <em>character</em> Name of genepop input file. If it is located in a different folder give the entire file path.<br />
-</li>
-<li>outfile <em>character</em> File path of the output file. If you want it to save somethwere else give it the entire file path.</li>
-<li>ReportingGroupFile <em>character</em> File path to the reporting group file. This should be a csv with the first column as the population label in the genepop file and the second column as the reporting group used for the analysis</li>
-<li>digits <em>numeric</em> The number of digits used for the genepop file (can be 2 or 3).</li>
-</ul>
+<p>So for my PhD I had a few Sockeye salmon that were huge outliers and I wanted to see if I could assign them to nearby populations using the ADF&amp;G sockeye baseline. Luckily, I had used the SNPs for my study that they use in their baseline. So I had on hand some scripts that could easily be turned into functions for use by the NOAA folks. I made two functions <em>Genepop2rubias_baseline()</em> and <em>Genepop2rubias_mixture()</em>. From the <a href="#chinookbaseline">baseline file</a> file I was able to adapt my script to read in a genepop file and spit out a .csv for use in rubias. Here is what the funciton needs as input:</p>
+<p><em>Genepop2rubias_baseline()</em> + infile <em>character</em> Name of genepop input file. If it is located in a different folder give the entire file path.<br />
++ outfile <em>character</em> File path of the output file. If you want it to save somethwere else give it the entire file path. + ReportingGroupFile <em>character</em> File path to the reporting group file. This should be a csv with the first column as the population label in the genepop file and the second column as the reporting group used for the analysis + digits <em>numeric</em> The number of digits used for the genepop file (can be 2 or 3).</p>
+<p><em>Genepop2rubias_mixture()</em> + infile <em>character</em> Name of genepop input file. If it is located in a different folder give the entire file path.<br />
++ outfile <em>character</em> File path of the output file. If you want it to save somethwere else give it the entire file path. + digits <em>numeric</em> The number of digits used for the genepop file (can be 2 or 3).</p>
 <p>It does take a hot second to convert a big file because it splits the concatenated genotypes and places them in separate columns and it loops over the columns. The more loci that are involved the more loops that need to occur. Fun stuff. We could make it faster with a foreach %dopar% loop, but we are likely not going to be using this script a ton. The ShinyApp should be using the formatted rubias files.</p>
 <pre class="r"><code>source(&quot;./functions/Genepop2rubias.R&quot;)
+Genepop2rubias_mixture(infile=&quot;./Data/17AkutanMix.gen&quot;,outfile=&quot;./Data/17AkutanMix.csv&quot;,digits=2)
+#&gt; Mixture file ./Data/17AkutanMix.gen successfully converted to ./Data/17AkutanMix.csv .
+
 Genepop2rubias_baseline(infile=&quot;./Data/ChinookBaseline.gen&quot;,outfile=&quot;./Data/ChinookBaselineRubias.csv&quot;,digits=2,ReportingGroupFile=&quot;./Data/ReportingGroups.csv&quot;)
-#&gt; File conversion successful.</code></pre>
+#&gt; Baseline file ./Data/ChinookBaseline.gen successfully converted to ./Data/ChinookBaselineRubias.csv .</code></pre>
 </div>
 <div id="bayes2genepop" class="section level3">
 <h3><em>Bayes2Genepop</em></h3>
 <p>The Bayes baseline file consists of allele counts at each locus for all the populations. So we don’t have raw multilocus genotypes for each individual. We could take the Bayes baseline and simulate those genotypes, but that seems silly when we have the Genepop file to work with. We may have to simulate a Genepop baseline file for chum salmon but we will cross that bridge when we come to it.</p>
 <pre class="r"><code>source(&quot;./functions/Bayes2Genepop.R&quot;)
 Bayes2Genepop_mixture(infile=&quot;2016_Akutan.MIX&quot;,outfile=&quot;2016_Aukutan.gen&quot;,LociFile=&quot;./Data/Loci.txt&quot;,digits=2,SampPrefix=&quot;Mix&quot;,Project=paste(infile,&quot;Bayes2Genepop&quot;,sep=&quot;&quot;))</code></pre>
-<p>I spent a little bit of time creating code that will read in the Bayes mixture file and convert it to a genepop formatted file. Why convert it to Genepop? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias.</p>
-<p>The only snafu I ran into was that the original mixture file had only a single allele called for some individuals at locus 6. It doesn’t appear to be a haploid locus, but it may be that ABL scores their insertions/deletions as single alleles? I sent Chuck an email to confirm.</p>
+<p>So to create the Genepop2rubias scripts I needed Genepop files. Chuck gave me two Bayes files, so I first had to create a genepop file from the Bayes file which made the mixture conversion function a snap to create. Why convert it to Genepop first? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias.</p>
+<p>The only snafu I ran into was that the original mixture file had only a single allele called for some individuals at locus 6. This actually was really good because I didn’t know there was a haploid marker in the panel.</p>
 <p>Here is what the funciton needs as input:</p>
 <ul>
 <li>infile <em>character</em> Name of mixture file. If it is located in a different folder give the entire file path.<br />
