@@ -78,8 +78,8 @@ Genepop2rubias_baseline<-function(infile,outfile,digits,ReportingGroupFile){
   } else{cat("ReportingGroupFile not found! Check to make sure the path to the file is correct.")
     }
   
-PopIndex<-grep("pop|Pop|POP",dat) %>%
-  {if(1%in%.) .[-1]} #Remove the first index if Pop is in the file description
+PopIndex<-grep("pop|Pop|POP",dat)
+if(1%in%PopIndex) PopIndex<-PopIndex[-1] #Remove the first index if Pop is in the file description
 nloci<-PopIndex[1]-2 # How many loci do we have?
 LociNames<-dat[2:(nloci+1)] #What are the loci names?
 
@@ -113,13 +113,23 @@ Genos<-str_split(dat2[,2],pattern = " ") #split the character vector of genotype
 Genos<-lapply(1:nrow(dat2), function(x) Genos[[x]][Genos[[x]]!=""]) 
 GenoMat<-matrix(data=unlist(Genos),nrow=nrow(dat2),ncol=nloci,byrow=T)
 
-NewGenoMat<-matrix(data=NA,nrow=nrow(GenoMat),ncol=nloci*2)
+#Let's figure out if there are any haploid loci in the bunch
+HapLoc<-which(nchar(GenoMat[1,])==digits)
+DipLoc<-which(nchar(GenoMat[1,])!=digits)
 
-for (L in 1:nloci){
+NewGenoMat<-matrix(data=NA,nrow=nrow(GenoMat),ncol=length(DipLoc)*2)
+
+for (L in 1:length(DipLoc)){
   temp <- GenoMat[,L]
   temp2 <- lapply(1:(length(temp)),function(x) as.numeric(substring(temp[x],seq(1,digits*2,digits),seq(digits,digits*2,digits)))) #change width to 3 if uSats
   NewGenoMat[,((L*2-1):(L*2))]<-do.call(rbind, temp2)
 }#over L loci
+
+if(length(HapLoc)>0){
+  HapList<-lapply(1:length(HapLoc), function(x) c(as.numeric(GenoMat[,HapLoc[x]]),rep(NA,length(GenoMat[,HapLoc[x]]))))
+  HapMat<-matrix(data=unlist(HapList),nrow=nrow(NewGenoMat),ncol=length(HapLoc)*2)
+  NewGenoMat<-cbind(NewGenoMat,HapMat)
+}
 
 NewGenoMat2<-as.data.frame(NewGenoMat)
 NewGenoMat2[NewGenoMat2==0]<-"NA"
