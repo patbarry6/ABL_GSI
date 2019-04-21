@@ -40,11 +40,16 @@ dat2<-lapply(1:nrow(GenoMatAll),function(x) paste(formatC(as.numeric(GenoMatAll[
 dat2<-matrix(unlist(dat2),ncol=nloci,nrow=nrow(GenoMatAll),byrow=T)
 
 if(length(HapLoci)>0){ #if we have some Haploid loci then lets format them correctly and move the to the end of the file
-  Haploci<-dat2[,HapLoci]
+  HapLociMat<-dat2[,HapLoci]%>%
+    substr(x=.,start=1,stop=digits)
   dat2<-dat2[,-HapLoci]
-  }
+  dat2<-cbind(dat2,HapLociMat)
+  Loci<-c(Loci[-HapLoci,],Loci[HapLoci,])
+    }
 
 dat2<-cbind(paste(SampPrefix,seq(1,nrow(GenoMat)),sep="."),",",dat2)
+
+
 
 write.table(Project,outfile,quote=F,row.names=F,col.names=F)
 write.table(Loci,outfile,quote=F,row.names=F,col.names=F,append=T)
