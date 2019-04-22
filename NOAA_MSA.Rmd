@@ -181,7 +181,7 @@ It does take a hot second to convert a big file because it splits the concatenat
 source("./functions/Genepop2rubias.R")
 Genepop2rubias_mixture(infile="./Data/17AkutanMix.gen",outfile="./Data/17AkutanMix.csv",digits=2)
 
-Genepop2rubias_baseline(infile="./Data/ChinookBaseline.gen",outfile="./Data/ChinookBaselineRubias.csv",digits=2,ReportingGroupFile="./Data/ReportingGroups.csv")
+Genepop2rubias_baseline(infile="./Data/ChinookBaseline_clean.gen",outfile="./Data/ChinookBaselineRubias.csv",digits=2,ReportingGroupFile="./Data/ReportingGroups.csv")
 ```
 
 ### *Bayes2Genepop*
@@ -203,7 +203,16 @@ Here is what the funciton needs as input:
   + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
   + project *character* This is the project name that will go at the top of your genepop file. It defaults to the name of the input file and Bayes2Genepop
   
+```{r rubias, eval=TRUE}
+library("rubias")
+AkutanMix<-read.csv("./Data/17AkutanMix.csv",stringsAsFactors = F)
+ChinookBase<-read.csv("./Data/ChinookBaselineRubias.csv",stringsAsFactors = F)
+mix_est <- infer_mixture(reference = ChinookBase, 
+                         mixture = AkutanMix, 
+                         gen_start_col = 5)
+lapply(mix_est, head)
 
+```
 
 #References
 

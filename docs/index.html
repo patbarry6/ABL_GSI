@@ -342,8 +342,8 @@ write.table(file=NewFileName,x=&quot;Cleaned up BaselineFile&quot;,col.names=F,r
 Genepop2rubias_mixture(infile=&quot;./Data/17AkutanMix.gen&quot;,outfile=&quot;./Data/17AkutanMix.csv&quot;,digits=2)
 #&gt; Mixture file ./Data/17AkutanMix.gen successfully converted to ./Data/17AkutanMix.csv .
 
-Genepop2rubias_baseline(infile=&quot;./Data/ChinookBaseline.gen&quot;,outfile=&quot;./Data/ChinookBaselineRubias.csv&quot;,digits=2,ReportingGroupFile=&quot;./Data/ReportingGroups.csv&quot;)
-#&gt; Baseline file ./Data/ChinookBaseline.gen successfully converted to ./Data/ChinookBaselineRubias.csv .</code></pre>
+Genepop2rubias_baseline(infile=&quot;./Data/ChinookBaseline_clean.gen&quot;,outfile=&quot;./Data/ChinookBaselineRubias.csv&quot;,digits=2,ReportingGroupFile=&quot;./Data/ReportingGroups.csv&quot;)
+#&gt; Baseline file ./Data/ChinookBaseline_clean.gen successfully converted to ./Data/ChinookBaselineRubias.csv .</code></pre>
 </div>
 <div id="bayes2genepop" class="section level3">
 <h3><em>Bayes2Genepop</em></h3>
@@ -361,6 +361,59 @@ Bayes2Genepop_mixture(infile=&quot;2016_Akutan.MIX&quot;,outfile=&quot;2016_Auku
 <li>digits <em>numeric</em> The number of digits used for the genepop file (can be 2 or 3).</li>
 <li>project <em>character</em> This is the project name that will go at the top of your genepop file. It defaults to the name of the input file and Bayes2Genepop</li>
 </ul>
+<pre class="r"><code>library(&quot;rubias&quot;)
+AkutanMix&lt;-read.csv(&quot;./Data/17AkutanMix.csv&quot;,stringsAsFactors = F)
+ChinookBase&lt;-read.csv(&quot;./Data/ChinookBaselineRubias.csv&quot;,stringsAsFactors = F)
+mix_est &lt;- infer_mixture(reference = ChinookBase, 
+                         mixture = AkutanMix, 
+                         gen_start_col = 5)
+#&gt; Scoring locus C3N3 as haploid
+#&gt; Scoring locus C3N3 as haploid
+#&gt; Collating data; compiling reference allele frequencies, etc.   time: 2.90 seconds
+#&gt; Computing reference locus specific means and variances for computing mixture z-scores   time: 0.79 seconds
+#&gt; Working on mixture collection: Mix with 193 individuals
+#&gt;   calculating log-likelihoods of the mixture individuals.   time: 0.06 seconds
+#&gt;   performing 100 burn-in and 2000 more sweeps of method &quot;MCMC&quot;   time: 0.48 seconds
+#&gt;   tidying output into a tibble.   time: 0.12 seconds
+lapply(mix_est, head)
+#&gt; $mixing_proportions
+#&gt; # A tibble: 6 x 4
+#&gt;   mixture_collection repunit collection        pi
+#&gt;   &lt;chr&gt;              &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+#&gt; 1 Mix                Russia  KBIST98L   0.0000249
+#&gt; 2 Mix                Russia  KBOLS0298E 0.000507 
+#&gt; 3 Mix                Russia  KKAMC98L97 0.00457  
+#&gt; 4 Mix                Russia  KPAKH02    0.0000224
+#&gt; 5 Mix                Russia  KPILG0506  0.000134 
+#&gt; 6 Mix                Russia  KUNAL05    0.00353  
+#&gt; 
+#&gt; $indiv_posteriors
+#&gt; # A tibble: 6 x 10
+#&gt;   mixture_collect… indiv repunit collection     PofZ log_likelihood z_score
+#&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;         &lt;dbl&gt;          &lt;dbl&gt;   &lt;dbl&gt;
+#&gt; 1 Mix              &quot;Mix… Russia  KBIST98L   3.27e-11          -35.2  -3.49 
+#&gt; 2 Mix              &quot;Mix… Russia  KBOLS0298E 8.86e- 9          -32.8  -3.24 
+#&gt; 3 Mix              &quot;Mix… Russia  KKAMC98L97 2.56e- 9          -36.2  -4.31 
+#&gt; 4 Mix              &quot;Mix… Russia  KPAKH02    2.66e- 8          -28.4  -2.38 
+#&gt; 5 Mix              &quot;Mix… Russia  KPILG0506  2.49e- 5          -23.6   0.635
+#&gt; 6 Mix              &quot;Mix… Russia  KUNAL05    7.40e- 4          -23.8   0.297
+#&gt; # … with 3 more variables: n_non_miss_loci &lt;int&gt;, n_miss_loci &lt;int&gt;,
+#&gt; #   missing_loci &lt;list&gt;
+#&gt; 
+#&gt; $mix_prop_traces
+#&gt; # A tibble: 6 x 5
+#&gt;   mixture_collection sweep repunit collection      pi
+#&gt;   &lt;chr&gt;              &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;        &lt;dbl&gt;
+#&gt; 1 Mix                    0 Russia  KBIST98L   0.00581
+#&gt; 2 Mix                    0 Russia  KBOLS0298E 0.00581
+#&gt; 3 Mix                    0 Russia  KKAMC98L97 0.00581
+#&gt; 4 Mix                    0 Russia  KPAKH02    0.00581
+#&gt; 5 Mix                    0 Russia  KPILG0506  0.00581
+#&gt; 6 Mix                    0 Russia  KUNAL05    0.00581
+#&gt; 
+#&gt; $bootstrapped_proportions
+#&gt; # A tibble: 0 x 1
+#&gt; # … with 1 variable: mixture_collection &lt;chr&gt;</code></pre>
 </div>
 </div>
 </div>
