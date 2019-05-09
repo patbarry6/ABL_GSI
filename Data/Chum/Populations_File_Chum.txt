@@ -1,0 +1,381 @@
+  1  1 .005376  Namdae_R           .030645
+  2  1 .005376  Miomote            .030645
+  3  1 .005376  Kawabukuro         .030645
+  4  1 .005376  Hayatsuki          .030645
+  5  1 .005376  Gakko_River        .030645
+  6  1 .005376  Uono_River         .030645
+  7  1 .005376  Ohkawa             .030645
+  8  1 .005376  Tsugaruishi        .030645
+  9  1 .005376  Orikasa            .030645
+ 10  1 .005376  Sakari_River       .030645
+ 11  1 .005376  Koizumi_River      .030645
+ 12  1 .005376  Tokachi            .030645
+ 13  1 .005376  Kushiro            .030645
+ 14  1 .005376  Teshio             .030645
+ 15  1 .005376  Chitose            .030645
+ 16  1 .005376  Toshibetsu         .030645
+ 17  1 .005376  Shiriuchi          .030645
+ 18  1 .005376  Shikiu             .030645
+ 19  1 .005376  Yurappu            .030645
+ 20  1 .005376  Shizunai           .030645
+ 21  1 .005376  Tokoro             .030645
+ 22  1 .005376  Abashiri           .030645
+ 23  1 .005376  Horonai            .030645
+ 24  1 .005376  Shari_River        .030645
+ 25  1 .005376  Tokushibetsu       .030645
+ 26  1 .005376  Shibetsu           .030645
+ 27  1 .005376  Nishibetsu         .030645
+ 28  1 .005376  Ryazanovka         .030645
+ 29  1 .005376  Avakumovka         .030645
+ 30  1 .005376  Narva              .030645
+ 31  1 .005376  Suifen             .030645
+ 32  2 .005376  Amur               .000143
+ 33  2 .005376  Naiba              .000143
+ 34  2 .005376  Kalininka          .000143
+ 35  2 .005376  Tym_               .000143
+ 36  2 .005376  Udarnitsa          .000143
+ 37  2 .005376  Tauy               .000143
+ 38  2 .005376  Ola_               .000143
+ 39  2 .005376  Magadan            .000143
+ 40  2 .005376  Okhota             .000143
+ 41  2 .005376  Tugur_River        .000143
+ 42  2 .005376  Oklan              .000143
+ 43  2 .005376  Penzhina           .000143
+ 44  2 .005376  Vorovskaya         .000143
+ 45  2 .005376  Kol_               .000143
+ 46  2 .005376  Pymta              .000143
+ 47  2 .005376  Hairusova          .000143
+ 48  2 .005376  Utka_River         .000143
+ 49  2 .005376  Kikchik            .000143
+ 50  2 .005376  Bolshaya           .000143
+ 51  2 .005376  Plotnikova_R       .000143
+ 52  2 .005376  Kamchatka          .000143
+ 53  2 .005376  Ossora             .000143
+ 54  2 .005376  Nerpichi           .000143
+ 55  2 .005376  Ivashka            .000143
+ 56  2 .005376  Karaga             .000143
+ 57  2 .005376  Dranka             .000143
+ 58  2 .005376  Apuka_River        .000143
+ 59  2 .005376  Olutorsky_Bay      .000143
+ 60  2 .005376  Zhypanova          .000143
+ 61  2 .005376  Anadyr             .000143
+ 62  2 .005376  Kanchalan          .000143
+ 63  3 .004505  Kelly_Lake         .000143
+ 64  3 .004505  Noatak             .000143
+ 65  3 .004505  Imnachuk           .000143
+ 66  3 .004505  Kobuk              .000143
+ 67  3 .004505  Agiapuk            .000143
+ 68  3 .004505  Koyuk              .000143
+ 69  3 .004505  Peel_River         .000143
+ 70  3 .004505  Pikmiktalik        .000143
+ 71  3 .004505  Niukluk            .000143
+ 72  3 .004505  Pilgrim_River      .000143
+ 73  3 .004505  Kwiniuk_River      .000143
+ 74  3 .004505  Snake              .000143
+ 75  3 .004505  Unalakleet         .000143
+ 76  3 .004505  Ungalik            .000143
+ 77  3 .004505  Nome               .000143
+ 78  3 .004505  Shaktoolik         .000143
+ 79  3 .004505  Eldorado           .000143
+ 80  3 .004505  Andreafsky         .000143
+ 81  3 .004505  Chulinak           .000143
+ 82  3 .004505  Tozitna            .000143
+ 83  3 .004505  Anvik              .000143
+ 84  3 .004505  Nulato             .000143
+ 85  3 .004505  Melozitna          .000143
+ 86  3 .004505  Gisasa             .000143
+ 87  3 .004505  Aniak              .000143
+ 88  3 .004505  George             .000143
+ 89  3 .004505  Kanektok           .000143
+ 90  3 .004505  Kasigluk           .000143
+ 91  3 .004505  Kwethluk           .000143
+ 92  3 .004505  Nunsatuk           .000143
+ 93  3 .004505  Goodnews           .000143
+ 94  3 .004505  Stuyahok_River     .000143
+ 95  3 .004505  Mulchatna          .000143
+ 96  3 .004505  Naknek             .000143
+ 97  3 .004505  Togiak             .000143
+ 98  3 .004505  Alagnak            .000143
+ 99  3 .004505  Henshaw_Creek      .000143
+100  4 .007246  Jim_River          .000143
+101  4 .007246  Koyukuk_south      .000143
+102  4 .007246  Koyukuk_late       .000143
+103  4 .007246  Cheena             .000143
+104  4 .007246  Salcha             .000143
+105  4 .007246  Delta              .000143
+106  4 .007246  Toklat             .000143
+107  4 .007246  Kantishna          .000143
+108  4 .007246  Sheenjek           .000143
+109  4 .007246  Black_River        .000143
+110  4 .007246  Chandalar          .000143
+111  4 .007246  Big_Salt           .000143
+112  4 .007246  Tatchun            .000143
+113  4 .007246  Pelly              .000143
+114  4 .007246  Big_Creek          .000143
+115  4 .007246  Minto              .000143
+116  4 .007246  Kluane             .000143
+117  4 .007246  Donjek             .000143
+118  4 .007246  Kluane_Lake        .000143
+119  4 .007246  Fishing_Br         .000143
+120  4 .007246  Porcupine          .000143
+121  4 .007246  Teslin             .000143
+122  4 .007246  Chandindu          .000143
+123  5 .009804  Egegik             .000143
+124  5 .009804  Gertrude_Creek     .000143
+125  5 .009804  Pumice_Creek       .000143
+126  5 .009804  Meshik             .000143
+127  5 .009804  Moller_Bay         .000143
+128  5 .009804  Joshua_Green       .000143
+129  5 .009804  Frosty_Creek       .000143
+130  5 .009804  Volcano_Bay        .000143
+131  5 .009804  Coleman_Creek      .000143
+132  5 .009804  Delta_Creek        .000143
+133  5 .009804  Westward_Creek     .000143
+134  5 .009804  Stepovak_Bay       .000143
+135  5 .009804  Alogoshak          .000143
+136  5 .009804  Big_River          .000143
+137  5 .009804  American_River     .000143
+138  5 .009804  Sturgeon           .000143
+139  5 .009804  Uganik             .000143
+140  6 .000689  Keta_Creek         .000143
+141  6 .000689  Wells_River        .000143
+142  6 .000689  Constantine        .000143
+143  6 .000689  Olsen_Creek        .000143
+144  6 .000689  Fish_Creek         .000143
+145  6 .000689  Dipac_Hatchery     .000143
+146  6 .000689  Gambier            .000143
+147  6 .000689  Wells_Bridge       .000143
+148  6 .000689  Herman_Creek       .000143
+149  6 .000689  Sawmill            .000143
+150  6 .000689  Greens             .000143
+151  6 .000689  Kennell            .000143
+152  6 .000689  Disappearance      .000143
+153  6 .000689  Neets_Bay_late     .000143
+154  6 .000689  Neets_Bay_early    .000143
+155  6 .000689  Carroll            .000143
+156  6 .000689  Nakut_Su           .000143
+157  6 .000689  LagoonCr           .000143
+158  6 .000689  Takwahoni          .000143
+159  6 .000689  Taku               .000143
+160  6 .000689  Tuskwa             .000143
+161  6 .000689  Yellow_Bluff       .000143
+162  6 .000689  Shustnini          .000143
+163  6 .000689  Gold_Harbour       .000143
+164  6 .000689  Mace_Creek         .000143
+165  6 .000689  Botany_Creek       .000143
+166  6 .000689  Clapp_Basin        .000143
+167  6 .000689  Security           .000143
+168  6 .000689  Dawson_Inlet       .000143
+169  6 .000689  Mountain_Cr        .000143
+170  6 .000689  Fairfax_Inlet      .000143
+171  6 .000689  Kano_Inlet_Cr      .000143
+172  6 .000689  Steel_Cr           .000143
+173  6 .000689  Seal_Inlet_Cr      .000143
+174  6 .000689  Thorsen            .000143
+175  6 .000689  Pallant            .000143
+176  6 .000689  Sedgewick          .000143
+177  6 .000689  Lagoon_Inlet       .000143
+178  6 .000689  Bag_Harbour        .000143
+179  6 .000689  Salmon_River       .000143
+180  6 .000689  Little_Goose       .000143
+181  6 .000689  Dana_Creek         .000143
+182  6 .000689  Pacofi             .000143
+183  6 .000689  Surprise           .000143
+184  6 .000689  Hutton_Head        .000143
+185  6 .000689  Ain_               .000143
+186  6 .000689  Awun               .000143
+187  6 .000689  Naden              .000143
+188  6 .000689  Stanley            .000143
+189  6 .000689  Slatechuck_Cre     .000143
+190  6 .000689  Government         .000143
+191  6 .000689  North_Arm          .000143
+192  6 .000689  Tarundl_Creek      .000143
+193  6 .000689  Deena              .000143
+194  6 .000689  Lagins             .000143
+195  6 .000689  Buck_Channel       .000143
+196  6 .000689  Honna              .000143
+197  6 .000689  Kshwan             .000143
+198  6 .000689  Khutzeymateen      .000143
+199  6 .000689  Lachmach           .000143
+200  6 .000689  Stagoo             .000143
+201  6 .000689  Toon               .000143
+202  6 .000689  Dak_               .000143
+203  6 .000689  Kateen             .000143
+204  6 .000689  Kitsault_Riv       .000143
+205  6 .000689  Ensheshese         .000143
+206  6 .000689  Wilauks_Cr         .000143
+207  6 .000689  Illiance           .000143
+208  6 .000689  Tseax              .000143
+209  6 .000689  Lizard_Cr          .000143
+210  6 .000689  Crag_Cr            .000143
+211  6 .000689  Stumaun_Cr         .000143
+212  6 .000689  Ksedin             .000143
+213  6 .000689  Kincolith          .000143
+214  6 .000689  Nass_River         .000143
+215  6 .000689  Nangeese           .000143
+216  6 .000689  Date_Creek         .000143
+217  6 .000689  Upper_Kitsumkal    .000143
+218  6 .000689  Kitwanga           .000143
+219  6 .000689  Ecstall_River      .000143
+220  6 .000689  Whitebottom_Cr     .000143
+221  6 .000689  Kalum              .000143
+222  6 .000689  Dog-tag            .000143
+223  6 .000689  Andesite_Cr        .000143
+224  6 .000689  Kleanza_Cr         .000143
+225  6 .000689  Kispiox            .000143
+226  6 .000689  Skeena             .000143
+227  6 .000689  Zymagotitz         .000143
+228  6 .000689  Wilson_Creek       .000143
+229  6 .000689  Markle_Inlet_Cr    .000143
+230  6 .000689  Pa-aat_River       .000143
+231  6 .000689  Kumealon           .000143
+232  6 .000689  Stewart_Cr         .000143
+233  6 .000689  Kxngeal_Cr         .000143
+234  6 .000689  Klewnuggit_Cr      .000143
+235  6 .000689  Bella_Bell         .000143
+236  6 .000689  Martin_Riv         .000143
+237  6 .000689  Snootli            .000143
+238  6 .000689  Cascade            .000143
+239  6 .000689  Bella_Coola        .000143
+240  6 .000689  Dean_River         .000143
+241  6 .000689  Jenny_Bay          .000143
+242  6 .000689  Kimsquit           .000143
+243  6 .000689  Elcho_Creek        .000143
+244  6 .000689  Kemano             .000143
+245  6 .000689  Gill_Creek         .000143
+246  6 .000689  Turn_Creek         .000143
+247  6 .000689  Quaal_River        .000143
+248  6 .000689  Kitimat_River      .000143
+249  6 .000689  Green_River        .000143
+250  6 .000689  Khutze_River       .000143
+251  6 .000689  Foch_Creek         .000143
+252  6 .000689  Blackrock_Creek    .000143
+253  6 .000689  Nias_Creek         .000143
+254  6 .000689  West_Arm_Creek     .000143
+255  6 .000689  Kitasoo            .000143
+256  6 .000689  Clatse_Creek       .000143
+257  6 .000689  Quartcha_Creek     .000143
+258  6 .000689  McLoughin_Creek    .000143
+259  6 .000689  Roscoe_Creek       .000143
+260  6 .000689  Mussel_River       .000143
+261  6 .000689  Kwakusdis_River    .000143
+262  6 .000689  Neekas_Creek       .000143
+263  6 .000689  Duthie_Creek       .000143
+264  6 .000689  Kainet_River       .000143
+265  6 .000689  Barnard            .000143
+266  6 .000689  Tyler              .000143
+267  6 .000689  Gilttoyee          .000143
+268  6 .000689  Lard               .000143
+269  6 .000689  Cooper_Inlet       .000143
+270  6 .000689  Bullock_Chann      .000143
+271  6 .000689  Deer_Pass          .000143
+272  6 .000689  Skowquiltz         .000143
+273  6 .000689  Frenchman          .000143
+274  6 .000689  Hooknose           .000143
+275  6 .000689  Nooseseck          .000143
+276  6 .000689  Kimsquit_Bay       .000143
+277  6 .000689  Bish_Cr            .000143
+278  6 .000689  Kiltuish           .000143
+279  6 .000689  Salmon_Bay         .000143
+280  6 .000689  Cheenis_Lake       .000143
+281  6 .000689  Necleetsconnay     .000143
+282  6 .000689  East_Arm           .000143
+283  6 .000689  Arnoup_Cr          .000143
+284  6 .000689  Flux_Cr            .000143
+285  6 .000689  Turtle_Cr          .000143
+286  6 .000689  MacNair_Creek      .000143
+287  6 .000689  Chuckwalla         .000143
+288  6 .000689  Clyak              .000143
+289  6 .000689  Lockhart-Gordon    .000143
+290  6 .000689  Quap               .000143
+291  6 .000689  Ashlulm            .000143
+292  6 .000689  Draney             .000143
+293  6 .000689  Milton             .000143
+294  6 .000689  Walkum             .000143
+295  6 .000689  Nekite             .000143
+296  6 .000689  Klinaklini         .000143
+297  6 .000689  Ahta______         .000143
+298  6 .000689  Viner_Sound        .000143
+299  6 .000689  Waump              .000143
+300  6 .000689  Taaltz             .000143
+301  6 .000689  Nimpkish           .000143
+302  6 .000689  Kakweiken          .000143
+303  6 .000689  Glendale           .000143
+304  6 .000689  Algard             .000143
+305  6 .000689  Ahnuhati           .000143
+306  6 .000689  Mackenzie_Sound    .000143
+307  6 .000689  Heydon_Cre         .000143
+308  6 .000689  Tzoonie            .000143
+309  6 .000689  Cheakamus          .000143
+310  6 .000689  Sliammon           .000143
+311  6 .000689  Mamquam            .000143
+312  6 .000689  Wortley_Creek      .000143
+313  6 .000689  Squamish           .000143
+314  6 .000689  Indian_River       .000143
+315  6 .000689  Theodosia          .000143
+316  6 .000689  Southgate          .000143
+317  6 .000689  Orford             .000143
+318  6 .000689  Shovelnose_Cr      .000143
+319  6 .000689  Mashiter_Creek     .000143
+320  6 .000689  Stawamus           .000143
+321  6 .000689  Homathko           .000143
+322  6 .000689  Goldstream         .000143
+323  6 .000689  Cowichan           .000143
+324  6 .000689  Nanaimo            .000143
+325  6 .000689  Chemainus          .000143
+326  6 .000689  Puntledge          .000143
+327  6 .000689  Big_Qual           .000143
+328  6 .000689  Little_Qua         .000143
+329  6 .000689  Campbell_River     .000143
+330  6 .000689  Cold_Creek         .000143
+331  6 .000689  Smith_Cree         .000143
+332  6 .000689  Demamiel           .000143
+333  6 .000689  Nitinat            .000143
+334  6 .000689  Hathaway_Creek     .000143
+335  6 .000689  Pegattum_Creek     .000143
+336  6 .000689  Goodspeed_River    .000143
+337  6 .000689  Cayeghle           .000143
+338  6 .000689  Colonial           .000143
+339  6 .000689  Sugsaw             .000143
+340  6 .000689  Nahmint_River      .000143
+341  6 .000689  Silverdale         .000143
+342  6 .000689  Squakum            .000143
+343  6 .000689  Wahleach           .000143
+344  6 .000689  Chilliwack         .000143
+345  6 .000689  Chehalis           .000143
+346  6 .000689  Stave              .000143
+347  6 .000689  Alouette           .000143
+348  6 .000689  Vedder             .000143
+349  6 .000689  Harrison           .000143
+350  6 .000689  Inch_Creek         .000143
+351  6 .000689  Lower_Lillooet     .000143
+352  6 .000689  NorrishWorth       .000143
+353  6 .000689  Alouette_North     .000143
+354  6 .000689  Widgeon_Slough     .000143
+355  6 .000689  Kawkawa            .000143
+356  6 .000689  Blaney_Creek       .000143
+357  6 .000689  Chilqua_Creek      .000143
+358  6 .000689  Serpentine_R       .000143
+359  6 .000689  Kanaka_Cr          .000143
+360  6 .000689  Worth_Creek        .000143
+361  6 .000689  Hopedale_Cr        .000143
+362  6 .000689  Hicks_Cr           .000143
+363  6 .000689  Harrison_late      .000143
+364  6 .000689  Nooksack           .000143
+365  6 .000689  Skagit             .000143
+366  6 .000689  County_Line        .000143
+367  6 .000689  Tulalip            .000143
+368  6 .000689  Grant_Creek        .000143
+369  6 .000689  Siberia_Creek      .000143
+370  6 .000689  SkykomishRiv       .000143
+371  6 .000689  Kennedy_Creek      .000143
+372  6 .000689  Minter_Cr          .000143
+373  6 .000689  GreenRrHatchery    .000143
+374  6 .000689  Big_Quilcene       .000143
+375  6 .000689  Hoodsport          .000143
+376  6 .000689  Salmon_Cr          .000143
+377  6 .000689  Elwha              .000143
+378  6 .000689  Ellsworth_Cr       .000143
+379  6 .000689  Bitter_Creek       .000143
+380  6 .000689  Quinault           .000143
+381  6 .000689  Satsop             .000143
