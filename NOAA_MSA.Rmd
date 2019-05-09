@@ -39,7 +39,7 @@ The big differnece between the Chinook and the Chum baseline and mixutre files i
 So I haven't played with the NOAA Chinook or chum salmon baseline or mixture files before so let's take a quick look at what they look like. What how many and what loci are we dealing with?
 
 ```{r ChinookBaseline}
-dat<-readLines("./Data/ChinookBaseline.gen")
+dat<-readLines("./Data/Chinook/ChinookBaseline.gen")
 PopIndex<-grep("pop|Pop|POP",dat) %>%
   {if(1%in%.) .[-1]} #Remove the first index if Pop is in the file description
 nloci<-PopIndex[1]-2
@@ -88,7 +88,7 @@ When converting the mixture file I found out that one of our markers is actually
 
 ```{r HaploidEdit}
 digits=2
-dat<-readLines("./Data/ChinookBaseline.gen")
+dat<-readLines("./Data/Chinook/ChinookBaseline.gen")
   
 PopIndex<-grep("pop|Pop|POP",dat) %>%
   {if(1%in%.) .[-1]} #Remove the first index if Pop is in the file description
@@ -137,7 +137,7 @@ LociNames<-c(LociNames[-6],LociNames[6]) #fix the loci names!
 Genos<-sapply(1:nrow(GenoMat),function(x) paste(dat2[x,1],",",paste(GenoMat[x,],collapse=" "),sep=" ")) #paste them all together in genepop format
 
 #write out each population in a loop
-NewFileName<-"./Data/ChinookBaseline_clean.gen"
+NewFileName<-"./Data/Chinook/ChinookBaseline_clean.gen"
 write.table(file=NewFileName,x="Cleaned up BaselineFile",col.names=F,row.names=F,quote=F)
     write.table(file=NewFileName,x=LociNames,append=T,col.names = F,row.names=F,quote=F)
     for (p in 1:npops){
@@ -182,9 +182,10 @@ It does take a hot second to convert a big file because it splits the concatenat
 
 ```{r Genepop2rubias, eval=FALSE}
 source("./functions/Genepop2rubias.R")
-Genepop2rubias_mixture(infile="./Data/17AkutanMix.gen",outfile="./Data/17AkutanMix.csv",digits=2)
+dir.create("./Data/Chinook/rubias_Akutan")
+Genepop2rubias_mixture(infile="./Data/Chinook/17AkutanMix.gen",outfile="./Data/Chinook/rubias_Akutan/17AkutanMix.csv",digits=2)
 
-Genepop2rubias_baseline(infile="./Data/ChinookBaseline_clean.gen",outfile="./Data/ChinookBaselineRubias.csv",digits=2,ReportingGroupFile="./Data/ReportingGroups.csv")
+Genepop2rubias_baseline(infile="./Data/Chinook/ChinookBaseline_clean.gen",outfile="./Data/Chinook/rubias_Akutan/ChinookBaselineRubias.csv",digits=2,ReportingGroupFile="./Data/Chinook/ReportingGroups.csv")
 ```
 
 ### *Bayes2Genepop*
@@ -192,7 +193,7 @@ The *Bayes* baseline file consists of allele counts at each locus for all the po
 
 ```{r Bayes2rubias, eval=FALSE}
 source("./functions/Bayes2Genepop.R")
-Bayes2Genepop_mixture(infile="2016_Akutan.MIX",outfile="2016_Aukutan.gen",LociFile="./Data/Loci.txt",digits=2,SampPrefix="Mix",Project=paste(infile,"Bayes2Genepop",sep=""))
+Bayes2Genepop_mixture(infile="./Data/Chinook/2016_Akutan.MIX",outfile="./Data/Chinook/2016_Aukutan.gen",LociFile="./Data/Chinook/Loci.txt",digits=2,SampPrefix="Mix",Project=paste(infile,"Bayes2Genepop",sep=""))
 ```
 So to create the Genepop2rubias scripts I needed Genepop files. Chuck gave me two Bayes files, so I first had to create a genepop file from the Bayes file which made the mixture conversion function a snap to create. Why convert it to Genepop first? Well it might be useful to run it through ade4 and a individual based PCA to see how different the samples are based on their multilocus genotype. Also, genepop is the most widely used input file and most of my code starts with a Genepop file, so it is easy to pipe it into another script to convert to rubias. 
 
@@ -213,12 +214,12 @@ Here is what the funciton needs as input:
 Chuck gave me a control file for Bayes to run the Akutan mixture. I assume this is the baseline file used in Guthrie et al. [-@Guthrie2018]. To run multiple chains I need to create a few more control files. I could ask Chuck for them, but it should be pretty straighforward to change the names of the output files, change the random seeds, change the starting proportions for the baseline samples and produce say 3 more control files:
 
 ```{r BayesCtrlFiles, eval=FALSE}
-dir.create("./Data/Bayes_Akutan")
-file.copy(from="./Data/17Akutan-1.csv",to="./Data/Bayes_Akutan/17Akutan.ctrl")
+dir.create("./Data/Chinook/Bayes_Akutan")
+file.copy(from="./Data/Chinook/17Akutan-1.csv",to="./Data/Chinook/Bayes_Akutan/17Akutan.ctrl")
 Samps<-500000 #Chuck was running 10000 in his Ctrl file, he likely runs a bunch of short chains?
 
 for (ctr in 1:4){
-Ctrl<-readLines("./Data/Bayes_Akutan/17Akutan.ctrl")
+Ctrl<-readLines("./Data/Chinook/Bayes_Akutan/17Akutan.ctrl")
 Title<-str_split(Ctrl[1]," ")[[1]][1]
 Ctrl[4]<-paste(Title,"-",ctr,".SUM",sep="")
 Ctrl[5]<-paste(Title,"-",ctr,".BOT",sep="")
@@ -251,7 +252,7 @@ if(ctr==4){
 
 Ctrl[(length(Ctrl)-as.numeric(Ctrl[11])+1):length(Ctrl)]<-paste(formatC(StockProp[,1],width=4,flag="-"),formatC(StockProp[,2],width=3,flag="-"),formatC(StockProp[,3],width=9,flag="-"),formatC(StockProp[,4],width=19,flag="-"),formatC(StockProp[,5],width=7,flag="-"),sep="")
 
-write.table(x=as.vector(Ctrl),file=paste("./Data/Bayes_Akutan/",Title,"-",ctr,".ctrl",sep=""),quote=F,row.names = F,col.names = F)
+write.table(x=as.vector(Ctrl),file=paste("./Data/Chinook/Bayes_Akutan/",Title,"-",ctr,".ctrl",sep=""),quote=F,row.names = F,col.names = F)
 }
 
 ```
@@ -259,7 +260,7 @@ Now that we have 4 brand new control files for Bayes we can walk to the computer
 
 ```{r BayesAkutanConverge, eval=TRUE}
 #check to make sure that the chains converged
-Res<-readLines("./Data/Bayes_Akutan/17Akutan-1.SUM")
+Res<-readLines("./Data/Chinook/Bayes_Akutan/17Akutan-1.SUM")
 StockNum<-11
 Res[(grep("Gelman and Rubin diagnostics computed from the second half of each chain only.",Res)+2):(grep("Gelman and Rubin diagnostics computed from the second half of each chain only.",Res)+3+StockNum)]
 
@@ -268,11 +269,11 @@ Res[(grep("Gelman and Rubin diagnostics computed from the second half of each ch
 It appears that our four Bayes chaines with different initial stock compositions converged to a similar solution. That is good. I didn't change the starting proportions that much, but they were substantially different from what we inferred so I will take that as a good sign. Let's now compare the stock composition estimates between the two programs.
 
 ```{r BayesAkutanComp, eval=TRUE}
-Res<-readLines("./Data/Bayes_Akutan/17Akutan-1.SUM")
+Res<-readLines("./Data/Chinook/Bayes_Akutan/17Akutan-1.SUM")
 StockNum<-11
 StockProp_Bayes<-Res[(grep("Chains combined: ",Res)+2):(grep("Chains combined: ",Res)+3+StockNum)]
 
-StockRepMap<-read.csv("./Data/ReportingGroups.csv")[,-1]%>%
+StockRepMap<-read.csv("./Data/Chinook/ReportingGroups.csv")[,-1]%>%
   group_by(ReportingGroup)%>%
   filter(row_number()==1)%>%
   as.data.frame()
@@ -283,8 +284,8 @@ StockPropMat<-StockPropMat[,c(1,5,4,6)]
 
 StockPropMat[,1]<-plyr::mapvalues(as.numeric(StockPropMat[,1]),from=StockRepMap[,2],to=as.character(StockRepMap[,1]))
 
-AkutanMix<-read.csv("./Data/17AkutanMix.csv",stringsAsFactors = F)
-ChinookBase<-read.csv("./Data/ChinookBaselineRubias.csv",stringsAsFactors = F)
+AkutanMix<-read.csv("./Data/Chinook/rubias_Akutan/17AkutanMix.csv",stringsAsFactors = F)
+ChinookBase<-read.csv("./Data/Chinook/rubias_Akutan/ChinookBaselineRubias.csv",stringsAsFactors = F)
 mix_est <- infer_mixture(reference = ChinookBase, 
                          mixture = AkutanMix, 
                          gen_start_col = 5,reps = 200000, burn_in = 20000)
