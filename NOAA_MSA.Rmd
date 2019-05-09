@@ -24,6 +24,7 @@ knitr::opts_chunk$set(
 ```{r loadpackages_WorkingDirectory, include = FALSE}
 library("stringr")
 library("tidyverse")
+library("rubias")
 ```
 
 #Introduction
@@ -165,19 +166,21 @@ So for my PhD I had a few Sockeye salmon that were huge outliers and I wanted to
 From the [baseline file](#chinookbaseline) file I was able to adapt my script to read in a genepop file and spit out a .csv for use in rubias. Here is what the funciton needs as input:
 
 *Genepop2rubias_baseline()*
+  
   + infile *character* Name of genepop input file. If it is located in a different folder give the entire       file path.  
   + outfile *character* File path of the output file. If you want it to save somethwere else give it the        entire file path.
   + ReportingGroupFile *character* File path to the reporting group file. This should be a csv with the         first column as the           population label in the genepop file and the second column as the reporting group       used for the analysis
   + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
 
 *Genepop2rubias_mixture()*
+
   + infile *character* Name of genepop input file. If it is located in a different folder give the entire file path.  
   + outfile *character* File path of the output file. If you want it to save somethwere else give it the entire file path.
   + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
 
 It does take a hot second to convert a big file because it splits the concatenated genotypes and places them in separate columns and it loops over the columns. The more loci that are involved the more loops that need to occur. Fun stuff. We could make it faster with a foreach %dopar% loop, but we are likely not going to be using this script a ton. The ShinyApp should be using the formatted rubias files. 
 
-```{r Genepop2rubias}
+```{r Genepop2rubias, eval=FALSE}
 source("./functions/Genepop2rubias.R")
 Genepop2rubias_mixture(infile="./Data/17AkutanMix.gen",outfile="./Data/17AkutanMix.csv",digits=2)
 
@@ -185,7 +188,7 @@ Genepop2rubias_baseline(infile="./Data/ChinookBaseline_clean.gen",outfile="./Dat
 ```
 
 ### *Bayes2Genepop*
-The Bayes baseline file consists of allele counts at each locus for all the populations. So we don't have raw multilocus genotypes for each individual. We could take the Bayes baseline and simulate those genotypes, but that seems silly when we have the Genepop file to work with. We may have to simulate a Genepop baseline file for chum salmon but we will cross that bridge when we come to it. 
+The *Bayes* baseline file consists of allele counts at each locus for all the populations. So we don't have raw multilocus genotypes for each individual. We could take the *Bayes* baseline and simulate those genotypes, but that seems silly when we have the Genepop file to work with. We may have to simulate a Genepop baseline file for chum salmon but we will cross that bridge when we come to it. 
 
 ```{r Bayes2rubias, eval=FALSE}
 source("./functions/Bayes2Genepop.R")
@@ -203,16 +206,170 @@ Here is what the funciton needs as input:
   + digits *numeric* The number of digits used for the genepop file (can be 2 or 3).
   + project *character* This is the project name that will go at the top of your genepop file. It defaults to the name of the input file and Bayes2Genepop
   
-```{r rubias, eval=TRUE}
-library("rubias")
+  
+##Akutan Analysis: *Bayes* vs. *Rubias*
+
+###*Bayes*
+Chuck gave me a control file for Bayes to run the Akutan mixture. I assume this is the baseline file used in Guthrie et al. [-@Guthrie2018]. To run multiple chains I need to create a few more control files. I could ask Chuck for them, but it should be pretty straighforward to change the names of the output files, change the random seeds, change the starting proportions for the baseline samples and produce say 3 more control files:
+
+```{r BayesCtrlFiles, eval=FALSE}
+dir.create("./Data/Bayes_Akutan")
+file.copy(from="./Data/17Akutan-1.csv",to="./Data/Bayes_Akutan/17Akutan.ctrl")
+Samps<-500000 #Chuck was running 10000 in his Ctrl file, he likely runs a bunch of short chains?
+
+for (ctr in 1:4){
+Ctrl<-readLines("./Data/Bayes_Akutan/17Akutan.ctrl")
+Title<-str_split(Ctrl[1]," ")[[1]][1]
+Ctrl[4]<-paste(Title,"-",ctr,".SUM",sep="")
+Ctrl[5]<-paste(Title,"-",ctr,".BOT",sep="")
+Ctrl[6]<-paste(Title,"-",ctr,".FRQ",sep="")
+Ctrl[7]<-paste(Title,"-",ctr,".B01",sep="")
+Ctrl[8]<-paste(Title,"-",ctr,".CLS",sep="")
+Ctrl[9]<-paste(Title,"-",ctr,".RGN",sep="")
+Ctrl[10]<-format(Samps,scientific = F) #how many MCMC samples
+Ctrl[16:17]<-10 #thinning of stock proportion and baseline allele freq
+Ctrl[18]<-100 #thinning of stock assignment of each mixture individual
+Ctrl[13:15]<-sample(1:2147483647,3,replace=F) #random seeds
+#now for the starting stock proportions... this might be tricksy
+StockProp<-matrix(data=unlist(str_split(Ctrl[(length(Ctrl)-as.numeric(Ctrl[11])+1):length(Ctrl)],"\\s+")),nrow=as.numeric(Ctrl[11]),ncol=5,byrow=T)
+
+if(ctr==1){
+  cat("Leaving the starting proportions alone!")
+}
+if(ctr==2){
+  StockProp[,5]<-gsub("0\\.","\\.",sprintf(1/as.numeric(Ctrl[11]), fmt = '%#.6f'))
+}
+if(ctr==3){
+  StockProp[which(StockProp[,2]==1),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[which(StockProp[,2]==1),]), fmt = '%#.6f'))
+  StockProp[-which(StockProp[,2]==1),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[-which(StockProp[,2]==1),]), fmt = '%#.6f'))
+}
+
+if(ctr==4){
+  StockProp[which(StockProp[,2]==1|StockProp[,2]==2),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[which(StockProp[,2]==1|StockProp[,2]==2),]), fmt = '%#.6f'))
+  StockProp[-which(StockProp[,2]==1|StockProp[,2]==2),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[-which(StockProp[,2]==1|StockProp[,2]==2),]), fmt = '%#.6f'))
+}
+
+Ctrl[(length(Ctrl)-as.numeric(Ctrl[11])+1):length(Ctrl)]<-paste(formatC(StockProp[,1],width=4,flag="-"),formatC(StockProp[,2],width=3,flag="-"),formatC(StockProp[,3],width=9,flag="-"),formatC(StockProp[,4],width=19,flag="-"),formatC(StockProp[,5],width=7,flag="-"),sep="")
+
+write.table(x=as.vector(Ctrl),file=paste("./Data/Bayes_Akutan/",Title,"-",ctr,".ctrl",sep=""),quote=F,row.names = F,col.names = F)
+}
+
+```
+Now that we have 4 brand new control files for Bayes we can walk to the computer lab and work on a windows machine and run these bad boyz. It might take a while, so lets create 4 directories for *Bayes* each with their own executable and run them in parallel. Now that windows 10 has a linux kernel can we write a shell script and just launch them that way? Likely, but for the sake of getting this done and working on my Ph.D we will just copy and paste the entire directory and launch Bayes four times. After they are done we can check for convergence using the Gelmen-Rubin statistic and then ask for the proportion of each baseline population in the mixture. Then we can compare with what we got from *rubias*.  
+
+```{r BayesAkutanConverge, eval=TRUE}
+#check to make sure that the chains converged
+Res<-readLines("./Data/Bayes_Akutan/17Akutan-1.SUM")
+StockNum<-11
+Res[(grep("Gelman and Rubin diagnostics computed from the second half of each chain only.",Res)+2):(grep("Gelman and Rubin diagnostics computed from the second half of each chain only.",Res)+3+StockNum)]
+
+```
+
+It appears that our four Bayes chaines with different initial stock compositions converged to a similar solution. That is good. I didn't change the starting proportions that much, but they were substantially different from what we inferred so I will take that as a good sign. Let's now compare the stock composition estimates between the two programs.
+
+```{r BayesAkutanComp, eval=TRUE}
+Res<-readLines("./Data/Bayes_Akutan/17Akutan-1.SUM")
+StockNum<-11
+StockProp_Bayes<-Res[(grep("Chains combined: ",Res)+2):(grep("Chains combined: ",Res)+3+StockNum)]
+
+StockRepMap<-read.csv("./Data/ReportingGroups.csv")[,-1]%>%
+  group_by(ReportingGroup)%>%
+  filter(row_number()==1)%>%
+  as.data.frame()
+
+StockPropMat<-matrix(data=unlist(stringr::str_split(StockProp_Bayes[-(1:2)],"\\s+")),nrow=StockNum,ncol=9,byrow = T)[,-c(1:2)]
+
+StockPropMat<-StockPropMat[,c(1,5,4,6)]
+
+StockPropMat[,1]<-plyr::mapvalues(as.numeric(StockPropMat[,1]),from=StockRepMap[,2],to=as.character(StockRepMap[,1]))
+
 AkutanMix<-read.csv("./Data/17AkutanMix.csv",stringsAsFactors = F)
 ChinookBase<-read.csv("./Data/ChinookBaselineRubias.csv",stringsAsFactors = F)
 mix_est <- infer_mixture(reference = ChinookBase, 
                          mixture = AkutanMix, 
-                         gen_start_col = 5)
-lapply(mix_est, head)
+                         gen_start_col = 5,reps = 200000, burn_in = 20000)
+
+
+RG_mix_ests <- mix_est$mixing_proportions %>%
+  group_by(mixture_collection, repunit) %>%
+  summarise(repprop = sum(pi)) 
+
+trace_subset <- mix_est$mix_prop_traces %>%
+  filter(mixture_collection == "Mix", sweep > 50000) %>%
+  group_by(sweep, repunit) %>%
+  summarise(repprop = sum(pi)) 
+
+CI_rub <- trace_subset %>%
+  group_by(repunit) %>%
+  summarise(loCI = quantile(repprop, probs = 0.025),
+            hiCI = quantile(repprop, probs = 0.975))
+
+RubiasRes<-cbind(RG_mix_ests[,2:3],CI_rub[,2:3])
+RubiasRes$InfMeth<-"Rubias"
+
+BayesRes<-cbind(StockPropMat,rep("Bayes",nrow(StockPropMat)))
+colnames(BayesRes)<-colnames(RubiasRes)
+
+Res<-rbind(RubiasRes,BayesRes)
+Res[,2]<-as.numeric(Res[,2])
+Res[,3]<-as.numeric(Res[,3])
+Res[,4]<-as.numeric(Res[,4])
+
+Res[,1]<-factor(Res[,1],levels(as.factor(Res[,1]))[c(9,3,5,10,6,8,4,7,2,1,11)])
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=loCI, ymax=hiCI), width=.2,
+                 position=position_dodge(.9)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_fill_manual(values=cbPalette[2:3])+
+  guides(fill=guide_legend(title="Inference \nMethod"))+
+  xlab("Reporting Group")+
+  ylab("Stock Composition")
 
 ```
+
+This looks great! Bayes and Rubias give really similar results. I took the median values for Bayes with the 95% CI values. This, it appears, is what Chuck reports in the NOAA tech memos each year. We can also look at the mean value with standard deviations to see if they differ much:
+
+```{r BayesAkutanCompMean, eval=TRUE}
+#check to make sure that the chains converged
+StockPropMat<-matrix(data=unlist(stringr::str_split(StockProp_Bayes[-(1:2)],"\\s+")),nrow=StockNum,ncol=9,byrow = T)[,-c(1:2)]
+
+StockPropMat<-cbind(StockPropMat[,c(1,2)],as.numeric(StockPropMat[,2])-as.numeric(StockPropMat[,3]),as.numeric(StockPropMat[,2])+as.numeric(StockPropMat[,3]))
+
+StockPropMat[,1]<-plyr::mapvalues(as.numeric(StockPropMat[,1]),from=StockRepMap[,2],to=as.character(StockRepMap[,1]))
+
+BayesRes<-cbind(StockPropMat,rep("Bayes",nrow(StockPropMat)))
+colnames(BayesRes)<-colnames(RubiasRes)
+
+Res<-rbind(RubiasRes,BayesRes)
+Res[,2]<-as.numeric(Res[,2])
+Res[,3]<-as.numeric(Res[,3])
+Res[,4]<-as.numeric(Res[,4])
+
+Res[,1]<-factor(Res[,1],levels(as.factor(Res[,1]))[c(9,3,5,10,6,8,4,7,2,1,11)])
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=loCI, ymax=hiCI), width=.2,
+                 position=position_dodge(.9)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_fill_manual(values=cbPalette[2:3])+
+  guides(fill=guide_legend(title="Inference \nMethod"))+
+  xlab("Reporting Group")+
+  ylab("Stock Composition")
+
+```
+
+The mean and median for *Bayes* do not differ substantially, but using the standard deviation on the mean to represent the uncertainty around the estimate makes it appear we have much more confidence in the estimate. 
+
+Overall, we see that *Bayes* and *rubias* don't differ that much for the Akutan mixture. We could run a few different mixtures and compare them. It would be relatively easy to produce a few rubias mixture files and run them in sequence. Running the *Bayes* files would be a pain, but not terrible. I probably don't need to run either program for as long as I have here. *Bayes* takes overnight to run (not sure how long, but it is substantial) whereas *rubias* takes about 30 minutes to run with 500,000 samples. Can we run multiple chains in *rubias* from different starting configurations and assess convergence? Maybe Chuck can give some insight into how often Bayes runs into convergence issues. 
 
 #References
 
