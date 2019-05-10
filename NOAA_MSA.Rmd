@@ -557,7 +557,7 @@ for (ctr in 1:4){
 
 Not too bad, glad I made that script for the chinook instead of just going in and manually creating the control files. 
 
-```{r ChumRubiasBayes, eval=FALSE, cache.lazy=FALSE}
+```{r ChumRubiasBayes, eval=TRUE, cache.lazy=FALSE}
 library(tidyverse)
 #Run rubias from within R
 Age3Area1<-read.csv("./Data/Chum/rubias/Age3Area1.csv",stringsAsFactors = F)
@@ -631,7 +631,7 @@ ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) +
 
 Oh snap, again Bayes and rubias are pretty similar. They do seem a bit more different than with the Chinook salmon. Let's do a quick check and see if there is a big difference between the mean and median for *Bayes*.  
 
-```{r ChumBayesMean, eval=FALSE}
+```{r ChumBayesMean, eval=TRUE}
 #check to make sure that the chains converged
 StockPropMat<-matrix(data=unlist(stringr::str_split(StockProp_Bayes[-(1:2)],"\\s+")),nrow=StockNum,ncol=9,byrow = T)[,-c(1:2)]
 
