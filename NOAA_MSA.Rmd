@@ -663,6 +663,8 @@ ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) +
   ylab("Stock Composition")
 
 ```
+
+
 Nope, but the differences may be due to the fact that I didn't run the analyses all that long and my burn in is rather short. We can lengthen both analyses and see if that makes a difference if Chris is all that interested. 
 
 ### Dealing with Locus 2 in Population 240 
