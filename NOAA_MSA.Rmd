@@ -487,7 +487,7 @@ writeLines(text=as.character(LocusNames),con="./Data/Chum/Loci.txt")
 ```
 It appears that there was a slight issue with the Bayes baseline file. Population 240 was scored at locus 2 for 105 alleles (52.5 individuals). I added an extra allele (the most frequent) so that I could proceed with sampling without replacement. The new file is now called Chum_DFO11_BAYES_PDB.bse
 
-Alternatively we could double the size of the population and sample all the alleles twice. This would give us the same allele frequencies but a larger population. In each program the baseline allele frequencies are likely updated. Does the size of the population play a part in how the allele frequencies are estimated? If so this could not be the best way to create our new baseline. First thing we should do is read through Pella and Masuda [-@PellaMasuda2001] and figure out what *Bayes* does. Then maybe shoot Michelle and email and talk to her about which was is preferred. 
+Alternatively we could double the size of the population and sample all the alleles twice. This would give us the same allele frequencies but a larger population. In each program the baseline allele frequencies are likely updated. Does the size of the population play a part in how the allele frequencies are estimated? If so this could not be the best way to create our new baseline. First thing we should do is read through Pella and Masuda [-@PellaMasuda2001] and figure out what *Bayes* does. Then maybe shoot Michelle and email and talk to her about which was is preferred. In the prior for the genetic parameters (baseline allele frequencies) the count of the alleles. The posterior of the unknown allele relative frequency is Dirichlet distributed with a mean weighted by the allele counts. This is interesting. 
 
 For now lets convert the rubias files that we just created with the *Bayes* alllele indexes so that they match the 3730 allele bins.
 
@@ -557,7 +557,7 @@ for (ctr in 1:4){
 
 Not too bad, glad I made that script for the chinook instead of just going in and manually creating the control files. 
 
-```{r ChumRubiasBayes, eval=TRUE, cache.lazy=FALSE}
+```{r ChumRubiasBayes, eval=FALSE, cache.lazy=FALSE}
 library(tidyverse)
 #Run rubias from within R
 Age3Area1<-read.csv("./Data/Chum/rubias/Age3Area1.csv",stringsAsFactors = F)
@@ -629,9 +629,44 @@ ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) +
 
 ```
 
-Oh snap, again Bayes and rubias are pretty similar. Let's redo the analysis and bump up the samples for both programs and increase the burn-in to see if that has any effect.  
+Oh snap, again Bayes and rubias are pretty similar. They do seem a bit more different than with the Chinook salmon. Let's do a quick check and see if there is a big difference between the mean and median for *Bayes*.  
 
+```{r ChumBayesMean, eval=FALSE}
+#check to make sure that the chains converged
+StockPropMat<-matrix(data=unlist(stringr::str_split(StockProp_Bayes[-(1:2)],"\\s+")),nrow=StockNum,ncol=9,byrow = T)[,-c(1:2)]
 
+StockPropMat<-cbind(StockPropMat[,c(1,2)],as.numeric(StockPropMat[,2])-as.numeric(StockPropMat[,3]),as.numeric(StockPropMat[,2])+as.numeric(StockPropMat[,3]))
+
+StockPropMat[,1]<-plyr::mapvalues(as.numeric(StockPropMat[,1]),from=RGnames[,1],to=as.character(RGnames[,2]))
+
+BayesRes<-cbind(StockPropMat,rep("Bayes",nrow(StockPropMat)))
+colnames(BayesRes)<-colnames(RubiasRes)
+
+Res<-rbind(RubiasRes,BayesRes)
+Res[,2]<-as.numeric(Res[,2])
+Res[,3]<-as.numeric(Res[,3])
+Res[,4]<-as.numeric(Res[,4])
+
+Res[,1]<-factor(Res[,1],levels(as.factor(Res[,1]))[c(2,3,6,5,4,1)])
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=loCI, ymax=hiCI), width=.2,
+                 position=position_dodge(.9)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_fill_manual(values=cbPalette[2:3])+
+  guides(fill=guide_legend(title="Inference \nMethod"))+
+  xlab("Reporting Group")+
+  ylab("Stock Composition")
+
+```
+Nope, but the differences may be due to the fact that I didn't run the analyses all that long and my burn in is rather short. We can lengthen both analyses and see if that makes a difference if Chris is all that interested. 
+
+### Dealing with Locus 2 in Population 240 
+In the *Bayes* algorithm the mean of the Dirichlet distribution for the prior on the baseline allele frequencies is weighted by the sample size. We don't really know how *rubias* samples cuase it is still in press. So we need to figure out what is the most appropriate way of dealing with the fact that DFO has an odd number of alleles scored. I think the easiest thing to do next would be to construct another baseline and run the analysis and see how much the stock composition estimates change. Does it really make a difference?
 
 #References
 
