@@ -1,6 +1,7 @@
 ####Bayes2Genepop####
-library(tidyverse)
 library(plyr)
+library(tidyverse)
+
 
 Bayes2Genepop_mixture<-function(infile,outfile,LociFile,digits,SampPrefix="Mix",HapLoci=logical(length = 0),Project=paste(infile,"Bayes2Genepop",sep="")){
 

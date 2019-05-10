@@ -1,6 +1,7 @@
 ####Genepop2Rubias####
-library(tidyverse)
 library(plyr)
+library(tidyverse)
+
 
 Genepop2rubias_mixture<-function(infile,outfile,digits){
 

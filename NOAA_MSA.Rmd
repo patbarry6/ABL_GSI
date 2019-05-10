@@ -14,6 +14,7 @@ bibliography: ./Bibliography/NOAA_MSA.bib
 ---
 
 ```{r setup, include = FALSE}
+# !diagnostics off
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -21,7 +22,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r loadpackages_WorkingDirectory, include = FALSE}
+```{r loadpackages, include = FALSE}
 library("stringr")
 library("tidyverse")
 library("rubias")
@@ -30,12 +31,11 @@ library("rubias")
 #Introduction
 This project was stated to help with the NOAA Chinook and chum salmon Mixed Stock Analysis (MSA). At the NPRMC meeting on 14 April 2019, Jordan Watson and Chuck Guthrie mentioned they were transitioning from Bayes to rubias for MSA estimates. I have been working with both and have a few scripts that I thought might be pretty helpful to them. This notebook details the scripts that should help and troubleshoots any kind of issues that may be encountered when applying those scripts to other files. 
 
-# Conversion of the Baselines and Mixtures
+# Chinook Salmon
 
 ## Description of the Baseline file {#baseline}
 The big differnece between the Chinook and the Chum baseline and mixutre files is that the Chinook baseline uses SNP markers and the Chum salmon baseline uses microsatellite markers. It doesn't make much difference other than the fact that our scripts need to have the option to use either 2 or 3 digit genotypes in Genepop.
 
-### Chinook Salmon
 So I haven't played with the NOAA Chinook or chum salmon baseline or mixture files before so let's take a quick look at what they look like. What how many and what loci are we dealing with?
 
 ```{r ChinookBaseline}
@@ -268,7 +268,7 @@ Res[(grep("Gelman and Rubin diagnostics computed from the second half of each ch
 
 It appears that our four Bayes chaines with different initial stock compositions converged to a similar solution. That is good. I didn't change the starting proportions that much, but they were substantially different from what we inferred so I will take that as a good sign. Let's now compare the stock composition estimates between the two programs.
 
-```{r BayesAkutanComp, eval=TRUE}
+```{r BayesAkutanComp, eval=FALSE}
 Res<-readLines("./Data/Chinook/Bayes_Akutan/17Akutan-1.SUM")
 StockNum<-11
 StockProp_Bayes<-Res[(grep("Chains combined: ",Res)+2):(grep("Chains combined: ",Res)+3+StockNum)]
@@ -371,6 +371,267 @@ ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) +
 The mean and median for *Bayes* do not differ substantially, but using the standard deviation on the mean to represent the uncertainty around the estimate makes it appear we have much more confidence in the estimate. 
 
 Overall, we see that *Bayes* and *rubias* don't differ that much for the Akutan mixture. We could run a few different mixtures and compare them. It would be relatively easy to produce a few rubias mixture files and run them in sequence. Running the *Bayes* files would be a pain, but not terrible. I probably don't need to run either program for as long as I have here. *Bayes* takes overnight to run (not sure how long, but it is substantial) whereas *rubias* takes about 30 minutes to run with 500,000 samples. Can we run multiple chains in *rubias* from different starting configurations and assess convergence? Maybe Chuck can give some insight into how often Bayes runs into convergence issues. 
+
+# Chum Salmon
+The chum salmon baseline is formatted for Bayes [@Kondzelaetal2013]. So there is no Genepop file to work with here. The trouble with the Bayes baseline file is that alleles are given as counts for each population, but they aren't indexed by allele size. We would need to know the allele sizes used in the baseline provided we are converting from scores hot off the 3730. It isn't that big a deal if we are just converting old baseline and mixture files because we can just use the index of the allele in the mixture and baseline file. Let's do a quick comparison of Bayes and rubias. We will just code the uSat alleles by their index in the baseline and mixture files. So allele sizes should range from 1-30ish. We will definately want to come back to this and refine the code because it is silly to go from the 3730 alleles to a Bayes input just to run these analyses. I wonder if DFO ever gave ABL their sizes and they were standardized across labs. That is way above my pay grade so let's just go forth and compare.
+
+First we need to create a baseline and mixture file:
+
+```{r ChumBaselineMixture, eval=TRUE}
+#how many pops?
+pops<-readLines("./Data/Chum/Chum_DFO11_BAYES_PDB.bse")%>%
+      {sapply(1:length(.),function(l) unlist(str_split(.[l],"\\s+"))[2])}%>%
+      as.numeric()%>%
+      max()
+#how many loci?
+nloci<-readLines("./Data/Chum/Chum_DFO11_BAYES_PDB.bse")%>%
+        .[grep(pattern="^\\s+1\\s",x=.)]%>%
+        length()
+#how many alleles per loci?
+AllelesLoci<-readLines("./Data/Chum/Chum_DFO11_BAYES_PDB.bse")%>%
+    .[grep(pattern="^\\s+1\\s",x=.)]%>%
+    str_trim()%>%
+    str_split(pattern="\\s+")%>%
+    {lapply(1:length(.),function(x) length(.[[x]])-3)}%>%
+    unlist()
+
+# We are going to loop over loci and populations and count up the number of alleles
+# that were sampled and then just sample without replacement to create 
+# genotypes with a baseline with the correct number of each allele
+
+PopMats<-list()
+for (p in 1:pops){
+  PopSampNum<-readLines("./Data/Chum/Chum_DFO11_BAYES_PDB.bse")%>% #read in the modified baseline
+    .[grep(pattern=paste("^\\s+",p,"\\s",sep=""),x=.)]%>% #subset on the population we want
+    str_trim()%>% #trim off the leading space
+    {sapply(1:length(.),function(l) unlist(str_split(.[l],"\\s+"))[3])}%>% #figure out how many individuals were sampled
+    as.numeric()%>%
+    max(.)/2 #how many genotypes to create?
+  LociList<-list()
+  for (l in 1:nloci){
+    Alleles<-readLines("./Data/Chum/Chum_DFO11_BAYES_PDB.bse")%>% 
+      .[grep(pattern=paste("^\\s+",p,"\\s",sep=""),x=.)]%>% 
+      {str_trim(.[l])}%>%
+      str_split("\\s+")%>%
+      unlist()%>%
+      .[-(1:3)]%>%
+      as.numeric()
+    
+    names(Alleles)<-seq(1,length(Alleles),by=1)
+    
+    Allele2Samp<-as.numeric(rep(names(Alleles),Alleles)) #these are the alleles that we need to sample
+    
+    Genos<-matrix(data=sample(Allele2Samp,sum(Alleles),replace = F),nrow=sum(Alleles)/2,ncol=2,byrow=T) #these are our genotypes
+    
+    # #exit if there are an uneven number of alleles
+    # if(sum(Alleles)%%2 != 0){
+    #   cat(paste("Isse with ",l," locus in ", p, " pop",sep=""))
+    #   break
+    # }
+    # 
+    
+    #Each locus may have different number of alleles sampled, so lets pad the locus genotypes with NAs to make sure that we have enough genotypes for the entire set of individuals in the population
+    if(PopSampNum-nrow(Genos)==1){
+      Genos<-rbind(Genos,c(NA,NA))
+    } else if(PopSampNum-nrow(Genos)>1){
+      UnSamPad<-PopSampNum-nrow(Genos)
+      Genos<-rbind(Genos,matrix(data=NA,ncol=2,nrow=UnSamPad))
+    } 
+  #randomize the rows to make sure all the NAs aren't at the bottom
+  Genos<-Genos[sample(1:nrow(Genos),nrow(Genos),replace=F),]
+  LociList[[l]]<-Genos
+  
+  }#over l loci
+  PopMats[[p]]<-cbind(seq(from=1,to=PopSampNum,by=1),rep(p,PopSampNum),do.call(cbind,LociList))
+}#over p pops
+
+Baseline<-do.call(rbind,PopMats)
+BaselineConverted<-Baseline #lets store it as a new matrix for debugging 
+
+#Now we will need to convert all the loci using the conversions that Jackie Whittle sent me
+Convert2uSat<-read.csv("./Data/Chum/ConvertuSats.csv")
+for (l in 1:nloci){
+  BaselineConverted[,(l*2+1):(l*2+2)]<-plyr::mapvalues(x=BaselineConverted[,(l*2+1):(l*2+2)],from=Convert2uSat[which(Convert2uSat[,1]==l),4],to=Convert2uSat[which(Convert2uSat[,1]==l),3],warn_missing = F)
+}
+
+LocusNames<-unique(Convert2uSat$LocusName) #pull out the locus names 
+
+#What are the reporting groups?
+BaselineRG<-readLines("./Data/Chum/Age3Area1_Chain1.ctl")[-(1:(21+nloci))]%>%
+  str_split("\\s+")%>%
+  unlist()%>%
+  matrix(data=.,nrow=pops,ncol=5,byrow=T)
+
+#Create a matrix so that we can easily swap out the reporting group number for its acutal name
+BaselineRG<-BaselineRG[,-c(3,5)]
+colnames(BaselineRG)<-c("PopNum","RG_Num","PopName")
+
+RGnames<-matrix(data=c(seq(1,6,1),c("EAsia","NAsia","WAlaska","UpMidYukon","SW_Alaska","E_GOP_PNW")),nrow=6,ncol=2)
+
+#now lets format this for rubias
+BaselineConverted<-as.data.frame(BaselineConverted)
+BaselineConverted$sample_type<-"reference"
+BaselineConverted$collection<-plyr::mapvalues(x=BaselineConverted[,2],from=BaselineRG[,1],to=BaselineRG[,3])
+BaselineConverted$collectionNum<-plyr::mapvalues(x=BaselineConverted[,2],from=BaselineRG[,1],to=BaselineRG[,2])
+BaselineConverted$repunit<-plyr::mapvalues(x=BaselineConverted$collectionNum,from=RGnames[,1],to=RGnames[,2])
+
+rubiasBL<-BaselineConverted[,c(25,28,26,1,3:(nloci*2+2))]
+colnames(rubiasBL)[4]<-"indiv"
+colnames(rubiasBL)[5:(nloci*2+4)]<-rep(as.character(LocusNames),each=2)
+
+dir.create("./Data/Chum/rubias")
+
+rubiasBL[,4]<-paste(rubiasBL[,3],"_",rubiasBL[,4],sep="")
+write.csv(file="./Data/Chum/rubias/ChumBaseline_rubias.csv",x=rubiasBL,quote=F,row.names = F)
+writeLines(text=as.character(LocusNames),con="./Data/Chum/Loci.txt")
+```
+It appears that there was a slight issue with the Bayes baseline file. Population 240 was scored at locus 2 for 105 alleles (52.5 individuals). I added an extra allele (the most frequent) so that I could proceed with sampling without replacement. The new file is now called Chum_DFO11_BAYES_PDB.bse
+
+Alternatively we could double the size of the population and sample all the alleles twice. This would give us the same allele frequencies but a larger population. In each program the baseline allele frequencies are likely updated. Does the size of the population play a part in how the allele frequencies are estimated? If so this could not be the best way to create our new baseline. First thing we should do is read through Pella and Masuda [-@PellaMasuda2001] and figure out what *Bayes* does. Then maybe shoot Michelle and email and talk to her about which was is preferred. 
+
+For now lets convert the rubias files that we just created with the *Bayes* alllele indexes so that they match the 3730 allele bins.
+
+```{r ConvertRubias, eval=FALSE}
+#now lets deal with the mixture
+#This should be easy with the script from the King salmon
+source("./functions/Bayes2Genepop.R")
+Bayes2Genepop_mixture(infile="./Data/Chum/Age3Area1.MIX",outfile="./Data/Chum/Age3Area1.gen",LociFile="./Data/Chum/Loci.txt",digits=3,SampPrefix="Mix",Project="Age3Area1_Bayes2Genepop")
+source("./functions/Genepop2rubias.R")
+Genepop2rubias_mixture(infile="./Data/Chum/Age3Area1.gen",outfile="./Data/Chum/rubias/Age3Area1.csv",digits=3)
+
+#Our alleles in this file are the index number from the baseline, we need to convert to uSat allele size
+rubiasMix<-read.csv("./Data/Chum/rubias/Age3Area1.csv")
+rubiasMix<-as.matrix(rubiasMix)
+for (l in 1:nloci){
+  rubiasMix[,(l*2+3):(l*2+4)]<-plyr::mapvalues(x=str_trim(rubiasMix[,(l*2+3):(l*2+4)]),from=Convert2uSat[which(Convert2uSat[,1]==l),4],to=Convert2uSat[which(Convert2uSat[,1]==l),3],warn_missing = F)
+}
+
+write.csv(x=rubiasMix,"./Data/Chum/rubias/Age3Area1.csv",row.names = F)
+
+```
+Nice, this worked better than I expected. We have a sweet baseline in the 3730 allele sizes and a mixture that uses those allele sizes as well. It should be noted that if we convert the old mixture files to rubias we will always have to map the values from the file that Jackie gave me to make them compatible. This shouldn't be an issue because they already run Michelle Masudas script to convert from the 3730 scores to a Bayes mixutre file. Maybe I should turn this into a funciton that could easily be sourced. 
+
+
+```{r ChumBayesCtrlFiles, eval=FALSE}
+#Now we need to run bayes and compare. Again we just have a single control file... so lets make at least 4
+Samps<-200000 #Let's not go overkill this time
+dir.create("./Data/Chum/Bayes")
+for (ctr in 1:4){
+  Ctrl<-readLines("./Data/Chum/Age3Area1_Chain1.ctl")
+  Title<-gsub(" ","",str_split(Ctrl[1],",")[[1]][1])
+  Ctrl[2]<-"DFO11_BAYES_PDB.bse"
+  Ctrl[4]<-paste(Title,"-",ctr,".SUM",sep="")
+  Ctrl[5]<-paste(Title,"-",ctr,".BOT",sep="")
+  Ctrl[6]<-paste(Title,"-",ctr,".FRQ",sep="")
+  Ctrl[7]<-paste(Title,"-",ctr,".B01",sep="")
+  Ctrl[8]<-paste(Title,"-",ctr,".CLS",sep="")
+  Ctrl[9]<-paste(Title,"-",ctr,".RGN",sep="")
+  Ctrl[10]<-format(Samps,scientific = F) #how many MCMC samples
+  Ctrl[16:17]<-10 #thinning of stock proportion and baseline allele freq
+  Ctrl[18]<-100 #thinning of stock assignment of each mixture individual
+  Ctrl[13:15]<-sample(1:2147483647,3,replace=F) #random seeds
+  #now for the starting stock proportions... this might be tricksy
+  StockProp<-matrix(data=unlist(str_split(Ctrl[(length(Ctrl)-as.numeric(Ctrl[11])+1):length(Ctrl)],"\\s+")),nrow=as.numeric(Ctrl[11]),ncol=5,byrow=T)
+  
+  if(ctr==1){
+    cat("Leaving the starting proportions alone!")
+  }
+  if(ctr==2){
+    StockProp[,5]<-gsub("0\\.","\\.",sprintf(1/as.numeric(Ctrl[11]), fmt = '%#.6f'))
+  }
+  if(ctr==3){
+    StockProp[which(StockProp[,2]==1),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[which(StockProp[,2]==1),]), fmt = '%#.6f'))
+    StockProp[-which(StockProp[,2]==1),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[-which(StockProp[,2]==1),]), fmt = '%#.6f'))
+  }
+  
+  if(ctr==4){
+    StockProp[which(StockProp[,2]==1|StockProp[,2]==2),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[which(StockProp[,2]==1|StockProp[,2]==2),]), fmt = '%#.6f'))
+    StockProp[-which(StockProp[,2]==1|StockProp[,2]==2),5]<-gsub("0\\.","\\.",sprintf(0.5/nrow(StockProp[-which(StockProp[,2]==1|StockProp[,2]==2),]), fmt = '%#.6f'))
+  }
+  
+  Ctrl[(length(Ctrl)-as.numeric(Ctrl[11])+1):length(Ctrl)]<-paste(formatC(StockProp[,1],width=4,flag="-"),formatC(StockProp[,2],width=3,flag="-"),formatC(StockProp[,3],width=9,flag="-"),formatC(StockProp[,4],width=19,flag="-"),formatC(StockProp[,5],width=7,flag="-"),sep="")
+  
+  write.table(x=as.vector(Ctrl),file=paste("./Data/Chum/Bayes/",Title,"-",ctr,".ctrl",sep=""),quote=F,row.names = F,col.names = F)
+}
+```
+
+Not too bad, glad I made that script for the chinook instead of just going in and manually creating the control files. 
+
+```{r ChumRubiasBayes, eval=TRUE, cache.lazy=FALSE}
+library(tidyverse)
+#Run rubias from within R
+Age3Area1<-read.csv("./Data/Chum/rubias/Age3Area1.csv",stringsAsFactors = F)
+ChumBase<-read.csv("./Data/Chum/rubias/ChumBaseline_rubias.csv",stringsAsFactors = F)
+
+mix_est <- infer_mixture(reference = ChumBase, 
+                         mixture = Age3Area1, 
+                         gen_start_col = 5,reps = 200000, burn_in = 50000)
+
+#clean up the results
+RG_mix_ests <- mix_est$mixing_proportions %>%
+  dplyr::group_by(mixture_collection, repunit) %>%
+  dplyr::summarise(repprop = sum(pi)) 
+
+trace_subset <- mix_est$mix_prop_traces %>%
+  dplyr::filter(mixture_collection == "Mix", sweep > 50000) %>%
+  dplyr::group_by(sweep, repunit) %>%
+  dplyr::summarise(repprop = sum(pi)) 
+
+CI_rub <- trace_subset %>%
+  dplyr::group_by(repunit) %>%
+  dplyr::summarise(loCI = quantile(repprop, probs = 0.025),
+            hiCI = quantile(repprop, probs = 0.975))
+
+RubiasRes<-cbind(RG_mix_ests[,2:3],CI_rub[,2:3])
+RubiasRes$InfMeth<-"Rubias"
+
+
+#Pull in the Bayes results
+Res<-readLines("./Data/Chum/Bayes/2017-4.SUM")
+StockNum<-6
+StockProp_Bayes<-Res[(grep("Chains combined: ",Res)+2):(grep("Chains combined: ",Res)+3+StockNum)]
+
+#create a matrix of the results
+StockPropMat<-matrix(data=unlist(stringr::str_split(StockProp_Bayes[-(1:2)],"\\s+")),nrow=StockNum,ncol=9,byrow = T)[,-c(1:2)]
+
+#tidy up the results
+StockPropMat<-StockPropMat[,c(1,5,4,6)]
+
+#map the reporting group names instead of the numbers
+StockPropMat[,1]<-plyr::mapvalues(as.numeric(StockPropMat[,1]),from=RGnames[,1],to=as.character(RGnames[,2]))
+
+#create a matrix that we can bind with the rubias results for graphing
+BayesRes<-cbind(StockPropMat,rep("Bayes",nrow(StockPropMat)))
+colnames(BayesRes)<-colnames(RubiasRes)
+
+#bind up all the results
+Res<-rbind(RubiasRes,BayesRes)
+Res[,2]<-as.numeric(Res[,2])
+Res[,3]<-as.numeric(Res[,3])
+Res[,4]<-as.numeric(Res[,4])
+
+#rearrange the factor level so that the regions are in the order from the report
+Res[,1]<-factor(Res[,1],levels(as.factor(Res[,1]))[c(2,3,6,5,4,1)])
+
+#Lets graaph in the color blind pallete
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+ggplot(Res, aes(x=repunit, y=repprop, fill=InfMeth)) + 
+  geom_bar(stat="identity", color="black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=loCI, ymax=hiCI), width=.2,
+                position=position_dodge(.9)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_fill_manual(values=cbPalette[2:3])+
+  guides(fill=guide_legend(title="Inference \nMethod"))+
+  xlab("Reporting Group")+
+  ylab("Stock Composition")
+
+```
+
+Oh snap, again Bayes and rubias are pretty similar. Let's redo the analysis and bump up the samples for both programs and increase the burn-in to see if that has any effect.  
+
+
 
 #References
 
