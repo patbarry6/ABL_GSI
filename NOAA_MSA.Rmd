@@ -670,6 +670,37 @@ Nope, but the differences may be due to the fact that I didn't run the analyses 
 ### Dealing with Locus 2 in Population 240 
 In the *Bayes* algorithm the mean of the Dirichlet distribution for the prior on the baseline allele frequencies is weighted by the sample size. We don't really know how *rubias* samples cuase it is still in press. So we need to figure out what is the most appropriate way of dealing with the fact that DFO has an odd number of alleles scored. I think the easiest thing to do next would be to construct another baseline and run the analysis and see how much the stock composition estimates change. Does it really make a difference?
 
+
+
+If we want to run multiple chains and compare them we can pull the starting proportions 
+```{r PullStartingProp, eval=FALSE}
+Ctrl<-readLines("./Data/Chum/Age3Area1_Chain1.ctl")
+#Let's pull the stock block
+StockBlockMat<-Ctrl[grep(x=Ctrl,pattern="^1\\s+")[length(grep(x=Ctrl,pattern="^1\\s+"))]:length(Ctrl)]%>%
+  str_split("\\s+")%>%
+  unlist()%>%
+  matrix(data=.,nrow=length(Ctrl[grep(x=Ctrl,pattern="^1\\s+")[length(grep(x=Ctrl,pattern="^1\\s+"))]:length(Ctrl)]),
+         ncol=5,byrow = T)
+colnames(StockBlockMat)<-c("ID","RG","pi_param","collection","pi_init")
+
+Age3Area1<-read.csv("./Data/Chum/rubias/Age3Area1.csv",stringsAsFactors = F)
+ChumBase<-read.csv("./Data/Chum/rubias/ChumBaseline_rubias.csv",stringsAsFactors = F)
+
+#Check the names in the baseline rubias file and the bayes ctrl file
+all(StockBlockMat[,4]%in%ChumBase[,3])
+
+StockBlockdf<-as.data.frame(StockBlockMat)
+StockBlockdf[,3]<-as.numeric(paste(0,as.character(StockBlockdf[,3]),sep=""))
+StockBlockdf[,5]<-as.numeric(paste(0,as.character(StockBlockdf[,5]),sep=""))
+
+#Cool so we can pull the stock prop and priors for a rubias run.
+mix_est_newpriors <- infer_mixture(reference = ChumBase, 
+                         mixture = Age3Area1, 
+                         gen_start_col = 5,
+                         reps = 200000, burn_in = 50000,
+                         pi_prior=StockBlockdf[,c(4,3)],
+                         pi_init = StockBlockdf[,c(4,5)])
+```
 #References
 
 
