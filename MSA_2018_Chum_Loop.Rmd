@@ -1,0 +1,204 @@
+---
+title: 'NOAA Chinook and Chum salmon mixed stock analysis'
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+author: "Patrick Dylan Barry"
+date: "15 April 2019"
+output:
+  html_document:
+    df_print: paged
+bibliography: ./Bibliography/NOAA_MSA.bib
+---
+
+This file is a slightly modified version of Patrick's original one. 
+Primary changes include:
+1) Removes creation of the chum baseline file that includes genotypes instead of just allele frequencies.
+2) Puts the functions into a loop so that it will run rubias for all of the .mix files that are in the ./Data/Chum/mixture_files folder.
+3) Puts the functions into a loop so that it will compare rubias outputs with all of the Bayes outputs in the ./Data/Chum/Bayes/2018 folder.
+4) Figures of the Bayes/rubias comparison are output into the ./Data/Chum/Bayes_Rubias_Compare_Figs folder.
+
+```{r setup, include = FALSE}
+# !diagnostics off
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  cache = TRUE
+)
+```
+
+
+```{r loadpackages, include = FALSE}
+library("stringr")
+library("tidyverse")
+library("rubias")
+```
+
+Define globally relevant terms and functions
+```{r createGlobalVals,eval=TRUE}
+myfiles <- gsub(pattern = "\\.mix$", "",list.files("Data/Chum/mixture_files"))
+mycsv <- list.files("./Data/Chum/rubias/2018/")
+#now lets deal with the mixture
+#This should be easy with the script from the King salmon
+source("./functions/Bayes2Genepop.R")
+source("./functions/Genepop2rubias.R")
+
+RGnames<-matrix(data=c(seq(1,6,1),c("EAsia","NAsia","WAlaska","UpMidYukon","SW_Alaska","E_GOA_PNW")),nrow=6,ncol=2)
+nloci <- readLines("./Data/Chum/Loci.txt") %>% length()
+Convert2uSat<-read.csv("./Data/Chum/ConvertuSats.csv")
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+myburn <- 5000
+modelreps <- 10000
+```
+
+Convert Bayes mixture files, first to genepop and then from genepop to rubias formats.
+Output all of the .gen files into a folder called ./Data/Chum/gen_files.
+Output all of the .csv files into a folder called ./Data/Chum/rubias/2018
+
+```{r createRubiasMix,eval=FALSE}
+#Bayes2Genepop_mixture(infile="./Data/Chum/Age3Area1.MIX",outfile="./Data/Chum/Age3Area1.gen",LociFile="./Data/Chum/Loci.txt",digits=3,SampPrefix="Mix",Project="Age3Area1_Bayes2Genepop")
+#Genepop2rubias_mixture(infile="./Data/Chum/Age3Area1.gen",outfile="./Data/Chum/rubias/Age3Area1.csv",digits=3)
+
+lapply(myfiles,function(x) Bayes2Genepop_mixture(infile=paste0("./Data/Chum/mixture_files/",x,".mix"),
+                                                      outfile=paste0("./Data/Chum/gen_files/",x,".gen"),
+                                                      LociFile="./Data/Chum/Loci.txt",
+                                                      digits=3,
+                                                      SampPrefix="Mix",
+                                                      Project=paste0(x,"_Bayes2Genepop")))
+
+lapply(myfiles,function(x) Genepop2rubias_mixture(infile=paste0("./Data/Chum/gen_files/",x,".gen"),
+                                                  outfile=paste0("./Data/Chum/rubias/2018/",x,".csv"),
+                                                  digits=3))
+
+#Our alleles in this file are the index number from the baseline, we need to convert to uSat allele size
+mycsv <- list.files("./Data/Chum/rubias/2018/")
+
+for(i in 1:length(mycsv)){
+  rubiasMix<-read.csv(paste0("./Data/Chum/rubias/2018/",mycsv[i]))
+  rubiasMix<-as.matrix(rubiasMix)
+  for (l in 1:nloci){
+    rubiasMix[,(l*2+3):(l*2+4)]<-plyr::mapvalues(x=str_trim(rubiasMix[,(l*2+3):(l*2+4)]),from=Convert2uSat[which(Convert2uSat[,1]==l),4],to=Convert2uSat[which(Convert2uSat[,1]==l),3],warn_missing = F)
+  }
+  
+  write.csv(x=rubiasMix,paste0("./Data/Chum/rubias/2018/",mycsv[i]),row.names = F)
+}
+
+```
+
+Run the rubias model, using the model iterations and burn-in specifed in the global values chunk at the beginning of this document.
+
+```{r ChumRubiasBayes, eval=FALSE, cache.lazy=FALSE}
+#Run rubias from within R
+for(i in 1:length(mycsv)){
+myout<-read.csv(paste0("./Data/Chum/rubias/2018/",mycsv[i]),stringsAsFactors = F)
+ChumBase<-read.csv("./Data/Chum/rubias/ChumBaseline_rubias.csv",stringsAsFactors = F)
+
+infer_mixture(reference = ChumBase, 
+                         mixture = myout, 
+                         gen_start_col = 5,reps = modelreps, burn_in = myburn) %>% 
+  saveRDS(.,file=paste0("./Data/Chum/",myfiles[i],".RDS"))
+}
+```
+
+Create summaries from the rubias files and plot (and save) comparisons for each of the GSI strata (e.g., cluster, season, etc.)
+
+```{r}
+
+for(i in 1:length(myfiles)){
+  #  Load rubias output
+  mix_est <- readRDS(paste0("./Data/Chum/",myfiles[i],".RDS"))
+  
+  #clean up the results
+  RG_mix_ests <- mix_est$mixing_proportions %>%
+    dplyr::group_by(mixture_collection, repunit) %>%
+    dplyr::summarise(repprop = sum(pi)) 
+  
+  trace_subset <- mix_est$mix_prop_traces %>%
+    dplyr::filter(mixture_collection == "Mix", sweep > myburn) %>%
+    dplyr::group_by(sweep, repunit) %>%
+    dplyr::summarise(repprop = sum(pi)) 
+  
+  CI_rub <- trace_subset %>%
+    dplyr::group_by(repunit) %>%
+    dplyr::summarise(loCI = quantile(repprop, probs = 0.025),
+                     hiCI = quantile(repprop, probs = 0.975))
+  
+  #RubiasRes<-cbind(RG_mix_ests[,2:3],CI_rub[,2:3])
+  #RubiasRes$InfMeth<-"Rubias"
+  
+  RubiasRes <- RG_mix_ests %>% 
+    inner_join(CI_rub) %>% 
+    ungroup %>% 
+    dplyr::select(-mixture_collection) %>% 
+    mutate(InfMeth="Rubias")
+  
+  #Pull in the Bayes results from .SUM files
+  Res<-readLines(paste0("./Data/Chum/Bayes/2018/sum_files/",myfiles[i],"_Chain1_estimate.SUM"))
+  StockNum<-6
+  StockProp_Bayes<-Res[(grep("Chains combined: ",Res)+2):(grep("Chains combined: ",Res)+3+StockNum)]
+  
+  #  Create a matrix of results, tidy, bind together rubias and bayes outputs
+  Res <- matrix(data=unlist(stringr::str_split(StockProp_Bayes[-(1:2)],"\\s+")),nrow=StockNum,ncol=9,byrow = T)[,-c(1:2)] %>% 
+    data.frame %>% 
+    dplyr::select(5,4,6) %>% 
+    mutate_all(list(~as.numeric(as.character(.)))) %>% 
+    mutate(repunit=RGnames[,2],
+           InfMeth="Bayes") %>% 
+    dplyr::select(repunit,everything()) %>% 
+    setNames(colnames(RubiasRes)) %>% 
+    bind_rows(RubiasRes)
+  
+  # The following commented out code is not merged into the previous "res" chunk.
+  #create a matrix of the results
+  #StockPropMat<-matrix(data=unlist(stringr::str_split(StockProp_Bayes[-(1:2)],"\\s+")),nrow=StockNum,ncol=9,byrow = T)[,-c(1:2)]
+  
+  #tidy up the results
+  #StockPropMat<-StockPropMat[,c(1,5,4,6)]
+  #map the reporting group names instead of the numbers
+  #StockPropMat[,1] <- RGnames[,2]
+  #StockPropMat[,1]<-plyr::mapvalues(as.numeric(StockPropMat[,1]),from=RGnames[,1],to=as.character(RGnames[,2]))
+  
+  #create a matrix that we can bind with the rubias results for graphing
+  #BayesRes<-cbind(StockPropMat,rep("Bayes",nrow(StockPropMat)))
+  #colnames(BayesRes)<-colnames(RubiasRes)
+  
+  #bind up all the results
+  #Res<-rbind(RubiasRes,BayesRes)
+  #Res[,2]<-as.numeric(Res[,2])
+  #Res[,3]<-as.numeric(Res[,3])
+  #Res[,4]<-as.numeric(Res[,4])
+  
+  #rearrange the factor level so that the regions are in the order from the report
+  #Res[,1]<-factor(Res[,1],levels(as.factor(Res[,1]))[c(2,3,6,5,4,1)])
+  
+  #  Specify the plotting order
+  myorder <- c("SE Asia","NE Asia","Western AK","Upper/Middle Yukon","SW Alaska","Eastern GOA/PNW")
+
+  png(paste0("./Data/Chum/Bayes_Rubias_Compare_Figs/",myfiles[i],"_median.png"),width=6,height=6,units="in",res=300)
+  print(Res %>% 
+          mutate(repunit=fct_recode(repunit,
+                                    "SE Asia"="EAsia",
+                                    "NE Asia"="NAsia",
+                                    "Western AK"="WAlaska",
+                                    "Upper/Middle Yukon"="UpMidYukon",
+                                    "SW Alaska"="SW_Alaska",
+                                    "Eastern GOA/PNW"="E_GOA_PNW"),
+                 repunit2=fct_relevel(repunit,myorder)) %>% 
+    ggplot(aes(x=repunit2, y=repprop, fill=InfMeth)) + 
+    geom_bar(stat="identity", color="black", 
+             position=position_dodge()) +
+    geom_errorbar(aes(ymin=loCI, ymax=hiCI), width=.2,
+                  position=position_dodge(.9)) + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+    scale_fill_manual(values=cbPalette[2:3])+
+    guides(fill=guide_legend(title="Inference \nMethod"))+
+    xlab("Reporting Group")+
+    ylab("Stock Composition") + 
+    ggtitle(paste0(myfiles[i])))
+  dev.off()
+}
+```
